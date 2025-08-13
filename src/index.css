@@ -1,0 +1,43 @@
+/* index.css */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Si prefieres usar <link> en index.html para las fuentes, quita esto.
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Oswald:wght@400;500;600;700&family=Work+Sans:wght@300;400;500;600&display=swap');
+*/
+
+/* Variables CSS en RGB para compatibilidad con /<alpha> */
+:root {
+  --ch-primary: 0 155 217;    /* #009BD9 */
+  --ch-black:   0 0 0;        /* #000000 */
+  --ch-gray:    178 178 178;  /* #B2B2B2 */
+  --ch-dark-gray: 26 26 26;   /* #1a1a1a */
+  --ch-medium-gray: 42 42 42; /* #2a2a2a */
+  --ch-light-gray: 58 58 58;  /* #3a3a3a */
+}
+
+/* Base: tipografías y saneamiento ligero */
+@layer base {
+  html { scroll-behavior: smooth; }
+  body { @apply font-primary bg-ch-black text-white; }
+  ::selection { background: rgba(0,155,217,.25); }
+}
+
+/* Utilidades propias que sí aportan valor */
+@layer utilities {
+  .animate-fade-in { animation: fadeIn 1s ease-in-out; }
+  .line-clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .shadow-3xl { box-shadow: 0 35px 60px -12px rgba(0,0,0,0.25); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Scrollbar para tema oscuro */
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-track { background: rgb(var(--ch-medium-gray)); }
+::-webkit-scrollbar-thumb { background: rgb(var(--ch-gray)); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: rgb(var(--ch-primary)); }

@@ -1,9 +1,7 @@
 import { useEffect, useState } from 'react'
-import CatalogCard from '../components/products/CatalogCard'
 import { listCatalog } from '../services/catalog'
 import { CatalogProduct } from '../types/catalog'
 import ProductCard from '../components/products/ProductCard'
-import { catalogToProduct } from '../utils/catalogAdapter'
 
 export default function Products() {
   const [items, setItems] = useState<CatalogProduct[]>([])

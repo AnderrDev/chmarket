@@ -54,12 +54,13 @@ export default function Payment() {
       }
 
       // 2) Armar items para la Edge Function (variant_id + quantity)
-      //    IMPORTANTE: cada item del carrito debe incluir __variant_id (set en CatalogCard)
+      //    Nota: aceptamos variant_id o __variant_id por compatibilidad legacy
       const itemsPayload = items.map((i: any) => {
-        if (!i.__variant_id) {
-          throw new Error(`Falta __variant_id en el item "${i.name}".`)
+        const variantId = i.variant_id || i.__variant_id
+        if (!variantId) {
+          throw new Error(`Falta variant_id en el item "${i.name}".`)
         }
-        return { variant_id: String(i.__variant_id), quantity: Number(i.quantity) }
+        return { variant_id: String(variantId), quantity: Number(i.quantity) }
       })
 
       // 3) Cupón (si lo usas, pásalo en state o de algún input): la función espera "couponCode"
@@ -84,7 +85,7 @@ export default function Payment() {
       const pref = await createPreference(payload)
 
       // Guarda info útil para la pantalla de confirmación (opcional)
-      sessionStorage.setItem(
+      localStorage.setItem(
         'ch_last_order',
         JSON.stringify({ order_number: pref.order_number, email: customer.email })
       )

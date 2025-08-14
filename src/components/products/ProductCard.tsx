@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { useCart } from '../../context/CartContext'
 import { CatalogProduct } from '../../types/catalog'
 import { currency } from '../../utils/format'
+import { Link } from 'react-router-dom'
 
 
 /** Soporta images como string[] o [{ url: string }] o null */
@@ -100,6 +101,12 @@ export default function ProductCard({ p }: { p: CatalogProduct }) {
         </div>
 
         <div className="space-y-3">
+          <Link
+            to={`/product/${p.slug}`}
+            className="w-full inline-flex items-center justify-center border border-ch-gray/30 text-white font-semibold py-3 rounded-lg hover:bg-ch-light-gray/70"
+          >
+            Ver detalles
+          </Link>
           <button
             onClick={() => add(productForCart as any)}
             disabled={!canBuy}

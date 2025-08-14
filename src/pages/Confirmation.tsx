@@ -29,7 +29,7 @@ export default function Confirmation() {
   const orderNumberFromQuery =
     params.get('external_reference') || params.get('preference_id') || ''
   const stored = (() => {
-    try { return JSON.parse(localStorage.getItem('ch-last-checkout') || '{}') }
+    try { return JSON.parse(localStorage.getItem('ch_last_order') || '{}') }
     catch { return {} }
   })() as { order_number?: string; email?: string }
 

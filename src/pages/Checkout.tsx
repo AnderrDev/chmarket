@@ -20,8 +20,8 @@ const onSubmit = (e: React.FormEvent) => {
     return
   }
   // Guarda respaldo para Payment (por si navegan directo o se pierde el state)
-  sessionStorage.setItem('last_checkout_customer', JSON.stringify(info))
-  navigate('/payment', { state: { customer: info /*, discount_code: opcional */ } })
+  sessionStorage.setItem('ch_customer', JSON.stringify(info))
+  navigate('/payment', { state: { customer: info, discount_code: discountCode || undefined } })
 }
 
   return (

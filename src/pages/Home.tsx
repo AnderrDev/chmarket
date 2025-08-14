@@ -2,12 +2,10 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Shield, Award, Zap, Users, ArrowRight, CheckCircle2 } from 'lucide-react'
-import CatalogCard from '../components/products/CatalogCard'
 import Accordion, { AccordionItem } from '../components/ui/Accordion'
 import { listCatalog } from '../services/catalog'
 import { CatalogProduct } from '../types/catalog'
 import ProductCard from '../components/products/ProductCard'
-import { catalogToProduct } from '../utils/catalogAdapter'
 
 
 export default function Home() {

@@ -12,7 +12,7 @@ export default function Checkout() {
   const [info, setInfo] = useState<CustomerInfo>({ firstName:'', lastName:'', email:'', phone:'', address:'', city:'', zipCode:'', country:'' })
   const [discountCode, setDiscountCode] = useState('')
 
-const onSubmit = (e: React.FormEvent) => {
+const onSubmit = (e: React.FormEvent<HTMLFormElement>) => {
   e.preventDefault()
   // Validación simple
   if (!info.email) {

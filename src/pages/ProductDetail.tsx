@@ -4,7 +4,9 @@ import { ArrowLeft, Check, Heart, Share2, Star, Truck, RotateCcw, Shield } from 
 import { useCart } from '../context/CartContext'
 import { supabase } from '../lib/supabase'
 import { CatalogProduct } from '../types/catalog'
+import type { CartItem } from '../types/cart'
 import { currency } from '../utils/format'
+import { catalogToProduct, pickImage } from '../utils/catalogAdapter'
 
 
 export default function ProductDetail() {
@@ -38,12 +40,9 @@ export default function ProductDetail() {
   if (loading) return <div className="container py-16 text-ch-gray">Cargando…</div>
   if (!p) return <div className="container py-16 text-ch-gray">Producto no encontrado</div>
 
-  // Normaliza imágenes: cadena[] o [{url}]
-  const imgs: string[] = Array.isArray(p.images)
-    ? (typeof p.images[0] === 'string'
-        ? (p.images as string[])
-        : (p.images as any[]).map(i => i.url).filter(Boolean))
-    : []
+  // Normaliza imágenes con util central
+  const first = pickImage(p.images)
+  const imgs: string[] = first ? [first] : []
 
   const priceCOP = p.price_cents / 100
   const inStock = p.stock ?? 0
@@ -116,24 +115,29 @@ export default function ProductDetail() {
           </div>
 
           <button
-            onClick={() => add({
-              id: 0, // si tu CartItem necesita id numérico, o ajusta para aceptar variant_id/product_id
-              name: p.name,
-              type: p.type as any,
-              price: priceCOP,
-              image: imgs[0] || '',
-              images: imgs,
-              description: p.description,
-              longDescription: p.long_description,
-              features: p.features ?? [],
-              ingredients: p.ingredients ?? [],
-              nutritionFacts: p.nutrition_facts ?? {},
-              rating: Number(p.rating || 0),
-              reviews: p.reviews ?? 0,
-              inStock: inStock,
-              servings: 0,
-              // añade campos que tu CartItem requiera o adapta el contexto a usar product_id/variant_id string
-            } as any)}
+            onClick={() => {
+              const adapted = catalogToProduct(p)
+              const forCart: Omit<CartItem,'quantity'> = {
+                id: adapted.id,
+                variant_id: adapted.variant_id,
+                name: adapted.name,
+                type: adapted.type,
+                price: adapted.price,
+                image: adapted.image,
+                images: adapted.images,
+                slug: adapted.slug || '',
+                description: adapted.description,
+                longDescription: adapted.longDescription,
+                features: adapted.features,
+                ingredients: adapted.ingredients,
+                nutritionFacts: adapted.nutritionFacts,
+                rating: adapted.rating,
+                reviews: adapted.reviews,
+                inStock: adapted.inStock,
+                servings: adapted.servings,
+              }
+              add(forCart)
+            }}
             disabled={inStock === 0}
             className="w-full bg-ch-primary text-black py-4 rounded-lg text-lg font-semibold hover:opacity-90 disabled:opacity-50"
           >

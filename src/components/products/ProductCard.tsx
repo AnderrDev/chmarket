@@ -2,21 +2,11 @@ import { Check, Heart, Star } from 'lucide-react'
 import { useState } from 'react'
 import { useCart } from '../../context/CartContext'
 import { CatalogProduct } from '../../types/catalog'
+import type { CartItem } from '../../types/cart'
+import { pickImage } from '../../utils/catalogAdapter'
 import { currency } from '../../utils/format'
 import { Link } from 'react-router-dom'
 
-
-/** Soporta images como string[] o [{ url: string }] o null */
-function pickImage(images: any): string | null {
-  if (!images) return null
-  if (Array.isArray(images) && images.length > 0) {
-    const first = images[0]
-    if (typeof first === 'string') return first
-    if (first?.url) return first.url
-  }
-  if (images?.url) return images.url
-  return null
-}
 
 export default function ProductCard({ p }: { p: CatalogProduct }) {
   const { add } = useCart()
@@ -26,9 +16,9 @@ export default function ProductCard({ p }: { p: CatalogProduct }) {
   const canBuy = p.stock > 0
 
   // Objeto compatible con el carrito, INCLUYE variant_id ✅
-  const productForCart = {
+  const productForCart: Omit<CartItem, 'quantity'> = {
     // dejamos id como fallback legacy, pero la clave real será variant_id
-    id: Number.NaN,
+    id: 0,
     variant_id: p.variant_id,                      // << clave que usará el reducer
     name: `${p.name} – ${p.variant_label}`,
     type: (p.type || 'protein') as 'creatine' | 'protein', // adapta si tienes más tipos
@@ -45,7 +35,7 @@ export default function ProductCard({ p }: { p: CatalogProduct }) {
     reviews: p.reviews ?? 0,
     inStock: p.stock,
     servings: 0,
-  } as const
+  }
 
   return (
     <div className="bg-ch-dark-gray rounded-xl shadow-2xl border border-ch-gray/20 overflow-hidden group">
@@ -108,7 +98,7 @@ export default function ProductCard({ p }: { p: CatalogProduct }) {
             Ver detalles
           </Link>
           <button
-            onClick={() => add(productForCart as any)}
+            onClick={() => add(productForCart)}
             disabled={!canBuy}
             className="w-full bg-ch-primary text-black font-semibold py-3 rounded-lg hover:opacity-90 disabled:opacity-50"
           >

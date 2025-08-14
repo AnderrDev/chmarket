@@ -1,4 +1,8 @@
 // src/services/mp.ts
+/**
+ * Payload esperado por la Edge Function `create-preference`.
+ * - `couponCode` coincide con el nombre del campo que la función espera.
+ */
 export type PreferencePayload = {
   items: { variant_id: string; quantity: number }[];
   currency?: string; // "COP"
@@ -10,7 +14,13 @@ export type PreferencePayload = {
 // Detecta el endpoint de Functions:
 // - En local puedes usar un proxy /api si lo tienes
 // - En prod usa la URL de Supabase Functions: VITE_SUPABASE_URL + '/functions/v1'
-function getFunctionsBaseUrl() {
+/**
+ * Detecta la base URL de Functions según entorno.
+ * 1) Usa `VITE_FUNCTIONS_BASE_URL` si está.
+ * 2) Si no, compone a partir de `VITE_SUPABASE_URL`.
+ * 3) Fallback a `/api` (útil con proxy local).
+ */
+function getFunctionsBaseUrl(): string {
   const f = import.meta.env.VITE_FUNCTIONS_BASE_URL?.toString().replace(/\/+$/, '');
   if (f) return f; // p.ej: https://<project>.supabase.co/functions/v1
   const supa = import.meta.env.VITE_SUPABASE_URL?.toString().replace(/\/+$/, '');
@@ -19,7 +29,18 @@ function getFunctionsBaseUrl() {
   return '/api';
 }
 
-export async function createPreference(payload: PreferencePayload) {
+/**
+ * Crea una preferencia de Mercado Pago mediante la Edge Function.
+ * Devuelve `order_number`, `preference_id` y URL de redirección.
+ */
+export async function createPreference(payload: PreferencePayload): Promise<{
+  order_number: string;
+  preference_id: string;
+  init_point: string;
+  sandbox_init_point?: string;
+  total_cents: number;
+  currency: string;
+}> {
   const base = getFunctionsBaseUrl();
   const url = `${base}/create-preference`;
 
@@ -54,6 +75,6 @@ export async function createPreference(payload: PreferencePayload) {
     init_point: string;
     sandbox_init_point?: string;
     total_cents: number;
-    currency: string; // "COP"
+    currency: string;
   }>;
 }

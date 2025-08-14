@@ -26,17 +26,17 @@ export default function CartDrawer({ open, onClose }: { open: boolean; onClose: 
           {items.length === 0 ? (
             <p className="text-center text-ch-gray">Your cart is empty</p>
           ) : items.map(item => (
-            <div key={item.id} className="bg-ch-medium-gray rounded-lg p-4 border border-ch-gray/30">
+            <div key={item.variant_id ? String(item.variant_id) : `id:${item.id}`} className="bg-ch-medium-gray rounded-lg p-4 border border-ch-gray/30">
               <div className="flex items-center gap-4">
                 <img src={item.image} alt={item.name} className="w-16 h-16 object-cover rounded" />
                 <div className="flex-1">
                   <p className="text-white text-sm font-medium">{item.name}</p>
                   <p className="text-ch-gray text-sm">{currency(item.price)}</p>
                   <div className="flex items-center gap-2 mt-2">
-                    <button onClick={() => setQty(item.id, item.quantity - 1)} className="p-1 hover:bg-ch-light-gray rounded"><Minus className="w-4 h-4 text-ch-gray"/></button>
+                    <button onClick={() => setQty(item.variant_id ? String(item.variant_id) : `id:${item.id}`, item.quantity - 1)} className="p-1 hover:bg-ch-light-gray rounded"><Minus className="w-4 h-4 text-ch-gray"/></button>
                     <span className="px-3 py-1 bg-ch-black rounded text-sm text-white border border-ch-gray/30">{item.quantity}</span>
-                    <button onClick={() => setQty(item.id, item.quantity + 1)} className="p-1 hover:bg-ch-light-gray rounded"><Plus className="w-4 h-4 text-ch-gray"/></button>
-                    <button onClick={() => remove(item.id)} className="ml-2 text-ch-primary hover:underline">Remove</button>
+                    <button onClick={() => setQty(item.variant_id ? String(item.variant_id) : `id:${item.id}`, item.quantity + 1)} className="p-1 hover:bg-ch-light-gray rounded"><Plus className="w-4 h-4 text-ch-gray"/></button>
+                    <button onClick={() => remove(item.variant_id ? String(item.variant_id) : `id:${item.id}`)} className="ml-2 text-ch-primary hover:underline">Remove</button>
                   </div>
                 </div>
                 <div className="text-right font-bold text-white">{currency(item.price * item.quantity)}</div>

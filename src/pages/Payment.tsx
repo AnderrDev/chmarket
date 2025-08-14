@@ -7,6 +7,7 @@ import { useCart } from '../context/CartContext'
 import { paymentMethods } from '../data/paymentMethods'
 import { createPreference } from '../services/mp'
 import { PaymentInfo } from '../types/payment'
+import type { CartItem } from '../types/cart'
 import { currency } from '../utils/format'
 
 export default function Payment() {
@@ -26,9 +27,9 @@ export default function Payment() {
   })
 
   const getMethod = () => paymentMethods.find(m => m.id === payment.method)
-  const installmentAmount = () => (total / payment.installments).toFixed(2)
+  const installmentAmount = (): string => (total / payment.installments).toFixed(2)
 
-  async function onSubmit(e: React.FormEvent) {
+  async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
 
     // Solo Mercado Pago (lo demás lo podemos simular, pero pediste MP only)
@@ -40,7 +41,7 @@ export default function Payment() {
 
     try {
       // 1) Customer: primero intenta leer del sessionStorage (desde Checkout)
-      let customer = null as null | { firstName?: string; lastName?: string; email?: string }
+      let customer: null | { firstName?: string; lastName?: string; email?: string } = null
       const stored = sessionStorage.getItem('ch_customer')
       if (stored) {
         try { customer = JSON.parse(stored) } catch {/* ignore */}
@@ -55,7 +56,7 @@ export default function Payment() {
 
       // 2) Armar items para la Edge Function (variant_id + quantity)
       //    Nota: aceptamos variant_id o __variant_id por compatibilidad legacy
-      const itemsPayload = items.map((i: any) => {
+      const itemsPayload = items.map((i: CartItem & { __variant_id?: string }) => {
         const variantId = i.variant_id || i.__variant_id
         if (!variantId) {
           throw new Error(`Falta variant_id en el item "${i.name}".`)

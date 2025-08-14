@@ -2,15 +2,18 @@ import { createContext, useContext, useEffect, useMemo, useReducer } from 'react
 import { CartState, CartAction, CartItem } from '../types/cart';
 import { Product } from '../types/product';
 import { load, save } from '../utils/storage';
+import { keyOf } from '../utils/cart'
 
 
 const STORAGE_KEY = 'ch-plus-cart'
 const initialState: CartState = { items: [] }
 
-// clave estable: usa variant_id si existe, si no el id numérico
-const keyOf = (p: { variant_id?: string; id?: number }) =>
-  (p.variant_id && String(p.variant_id)) || (typeof p.id !== 'undefined' ? `id:${p.id}` : crypto.randomUUID())
+// Clave estable extraída a util para testear y reutilizar
 
+/**
+ * Reducer del carrito. Soporta las acciones: ADD, REMOVE, SET_QTY, CLEAR.
+ * Aplica límites de stock y filtra ítems con cantidad 0.
+ */
 function cartReducer(state: CartState, action: CartAction): CartState {
   switch (action.type) {
     case 'ADD': {
@@ -53,7 +56,7 @@ type CartContextType = {
   items: CartItem[]
   total: number
   count: number
-  add: (p: Product | CartItem) => void
+  add: (p: Omit<CartItem, 'quantity'> | (Product & Partial<Pick<CartItem,'variant_id'>>)) => void
   remove: (key: string) => void
   setQty: (key: string, qty: number) => void
   clear: () => void

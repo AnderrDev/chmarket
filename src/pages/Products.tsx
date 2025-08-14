@@ -1,28 +1,8 @@
-import { useEffect, useState } from 'react'
-import { listCatalog } from '../services/catalog'
-import { CatalogProduct } from '../types/catalog'
+import { useCatalog } from '../hooks/useCatalog'
 import ProductCard from '../components/products/ProductCard'
 
 export default function Products() {
-  const [items, setItems] = useState<CatalogProduct[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-
-  useEffect(() => {
-    let mounted = true
-      ; (async () => {
-        try {
-          setLoading(true)
-          const data = await listCatalog(24)
-          if (mounted) setItems(data)
-        } catch (e: any) {
-          setError(e?.message || 'Error cargando productos')
-        } finally {
-          if (mounted) setLoading(false)
-        }
-      })()
-    return () => { mounted = false }
-  }, [])
+  const { items, loading, error } = useCatalog(24)
 
   return (
     <section className="py-16">

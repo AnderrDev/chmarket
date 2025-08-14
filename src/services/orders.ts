@@ -1,3 +1,4 @@
+/** Orden almacenada en la tabla `orders`. */
 export type Order = {
   order_number: string
   email: string
@@ -10,6 +11,7 @@ export type Order = {
   created_at: string
 }
 
+/** Último pago asociado a la orden (puede ser null si aún no se generó). */
 export type Payment = {
   provider: string
   status: string
@@ -27,7 +29,10 @@ export type Item = {
   quantity: number
 }
 
-export async function fetchOrderSummary(order_number: string, email: string) {
+/**
+ * Consulta el estado de una orden (orden + último pago + items) en la Edge Function `order-status`.
+ */
+export async function fetchOrderSummary(order_number: string, email: string): Promise<{ order: Order; payment: Payment; items: Item[] }> {
   const base = import.meta.env.VITE_FUNCTIONS_URL as string
   const res = await fetch(`${base}/order-status`, {
     method: 'POST',

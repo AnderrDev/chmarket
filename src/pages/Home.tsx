@@ -1,36 +1,18 @@
 // src/pages/Home.tsx
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { Shield, Award, Zap, Users, ArrowRight, CheckCircle2 } from 'lucide-react'
 import Accordion, { AccordionItem } from '../components/ui/Accordion'
-import { listCatalog } from '../services/catalog'
-import { CatalogProduct } from '../types/catalog'
 import ProductCard from '../components/products/ProductCard'
+import { pickImage } from '../utils/catalogAdapter'
+import { useCatalog } from '../hooks/useCatalog'
 
 
 export default function Home() {
-  const [items, setItems] = useState<CatalogProduct[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-
-  useEffect(() => {
-    let mounted = true
-      ; (async () => {
-        try {
-          setLoading(true)
-          const data = await listCatalog(24)
-          if (mounted) setItems(data)
-        } catch (e: any) {
-          setError(e?.message || 'No se pudieron cargar los productos')
-        } finally {
-          if (mounted) setLoading(false)
-        }
-      })()
-    return () => { mounted = false }
-  }, [])
+  const { items, loading, error } = useCatalog(24)
 
   const top = useMemo(() => items.slice(0, 4), [items])
-  const heroImage = useMemo(() => pickImage(items[0]?.images), [items])
+  const heroImage = useMemo(() => pickImage(items[0]?.images) || null, [items])
 
   return (
     <>
@@ -206,18 +188,7 @@ function Stat({ number, label }: { number: string; label: string }) {
   )
 }
 
-/** Util: soporta images como string[] o [{url: string}] */
-function pickImage(images: any): string | null {
-  // if (!images) return null
-  // if (Array.isArray(images) && images.length > 0) {
-  //   const first = images[0]
-  //   if (typeof first === 'string') return first
-  //   if (first?.url) return first.url
-  // }
-  // if (images?.url) return images.url
-  // return null
-  return "https://iqeuktsyzrkrbkjiqfvy.supabase.co/storage/v1/object/public/images/Captura%20de%20pantalla%202025-08-11%20a%20la(s)%209.37.53%20p.m..png"
-}
+  // pickImage centralizado en utils/catalogAdapter
 
 const faqItems: AccordionItem[] = [
   {

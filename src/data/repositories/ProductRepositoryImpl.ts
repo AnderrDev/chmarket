@@ -1,4 +1,4 @@
-import type { ProductRepository } from '../../domain/catalog/ProductRepository'
+import type { ProductRepository } from '../../domain/repositories/catalog/ProductRepository'
 import type { CatalogProduct } from '../../types/catalog'
 import type { CatalogDataSource } from '../datasources/CatalogDataSource'
 

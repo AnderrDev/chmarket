@@ -1,9 +1,11 @@
-import { ArrowLeft, Shield } from "lucide-react"
+import { Shield } from "lucide-react"
 import { useState } from "react"
-import { useNavigate, Link } from "react-router-dom"
+import { useNavigate } from "react-router-dom"
 import { useCart } from "../context/CartContext"
 import { CustomerInfo } from "../types/customer"
 import { currency } from "../utils/format"
+import Input from "../components/forms/Input"
+import BackButton from "../components/common/BackButton"
 
 
 export default function Checkout() {
@@ -37,7 +39,7 @@ const onSubmit = (e: React.FormEvent<HTMLFormElement>) => {
 
   return (
     <div className="container py-10">
-      <Link to="/" className="inline-flex items-center text-ch-primary mb-6"><ArrowLeft className="w-5 h-5 mr-2"/>Back to Products</Link>
+      <BackButton className="mb-6" />
 
       <h1 className="text-3xl font-secondary text-white mb-8">Checkout</h1>
 
@@ -122,15 +124,6 @@ const onSubmit = (e: React.FormEvent<HTMLFormElement>) => {
           </div>
         </div>
       </div>
-    </div>
-  )
-}
-
-function Input({ label, value, onChange, type='text' }: { label: string; value: string; onChange: (v:string)=>void; type?: string }) {
-  return (
-    <div>
-      <label className="block text-sm text-ch-gray mb-1">{label}</label>
-      <input type={type} required value={value} onChange={e=>onChange(e.target.value)} className="w-full px-3 py-2 bg-ch-medium-gray border border-ch-gray/30 rounded-md"/>
     </div>
   )
 }

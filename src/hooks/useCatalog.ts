@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { listCatalog } from '../services/catalog'
+import { listProductsUseCase } from '../container'
 import type { CatalogProduct } from '../types/catalog'
 
 export type UseCatalogResult = {
@@ -20,7 +20,7 @@ export function useCatalog(limit = 24): UseCatalogResult {
     ;(async () => {
       try {
         setLoading(true)
-        const data = await listCatalog(limit)
+        const data = await listProductsUseCase.execute(limit)
         if (mounted) {
           setItems(data)
           setError(null)

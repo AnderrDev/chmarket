@@ -1,72 +1,23 @@
-import { useParams, Link } from 'react-router-dom'
-import { useEffect, useState } from 'react'
-import { ArrowLeft, Check, Heart, Share2, Star, Truck, RotateCcw, Shield } from 'lucide-react'
+import { useParams } from 'react-router-dom'
+import { useState } from 'react'
+import { Check, Heart, Share2, Star, Truck, RotateCcw, Shield } from 'lucide-react'
 import { useCart } from '../context/CartContext'
-import { supabase } from '../lib/supabase'
-import { CatalogProduct } from '../types/catalog'
 import type { CartItem } from '../types/cart'
 import { currency } from '../utils/format'
 import { catalogToProduct, pickImage } from '../utils/catalogAdapter'
+import useProductBySlug from '../hooks/useProductBySlug'
+import ProductGallery from '../components/products/ProductGallery'
+import ProductDetailSkeleton from '../components/products/ProductDetailSkeleton'
+import BackButton from '../components/common/BackButton'
 
 
 export default function ProductDetail() {
   const { slug } = useParams()
   const { add } = useCart()
-  const [p, setP] = useState<CatalogProduct | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [imgIdx, setImgIdx] = useState(0)
   const [fav, setFav] = useState(false)
+  const { product: p, loading } = useProductBySlug(slug)
 
-  useEffect(() => {
-    let ignore = false
-    async function load() {
-      setLoading(true)
-      const { data, error } = await supabase
-        .from('catalog_public')
-        .select('*')
-        .eq('slug', slug)
-        .limit(1)
-        .maybeSingle()
-      if (!ignore) {
-        if (error) console.error(error)
-        setP(data ?? null)
-        setLoading(false)
-      }
-    }
-    if (slug) load()
-    return () => { ignore = true }
-  }, [slug])
-
-  if (loading) return (
-    <div className="container py-10">
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-        <div>
-          <div className="relative overflow-hidden rounded-2xl">
-            <div className="animate-pulse w-full h-96 bg-ch-medium-gray" />
-          </div>
-          <div className="flex gap-4 mt-4">
-            {Array.from({ length: 4 }).map((_, i) => (
-              <div key={i} className="w-20 h-20 rounded-lg bg-ch-medium-gray animate-pulse" />
-            ))}
-          </div>
-        </div>
-        <div className="space-y-6">
-          <div className="space-y-3">
-            <div className="h-6 w-28 bg-ch-medium-gray rounded animate-pulse" />
-            <div className="h-8 w-3/4 bg-ch-medium-gray rounded animate-pulse" />
-            <div className="h-4 w-20 bg-ch-medium-gray rounded animate-pulse" />
-          </div>
-          <div className="h-10 w-40 bg-ch-medium-gray rounded animate-pulse" />
-          <div className="space-y-2">
-            {Array.from({ length: 4 }).map((_, i) => (
-              <div key={i} className="h-4 w-full bg-ch-medium-gray rounded animate-pulse" />
-            ))}
-          </div>
-          <div className="h-12 w-full bg-ch-medium-gray rounded animate-pulse" />
-        </div>
-      </div>
-    </div>
-  )
+  if (loading) return <ProductDetailSkeleton />
   if (!p) return <div className="container py-16 text-ch-gray">Producto no encontrado</div>
 
   // Normaliza imágenes con util central
@@ -78,25 +29,16 @@ export default function ProductDetail() {
 
   return (
     <div className="container py-10">
-      <Link to="/" className="inline-flex items-center text-ch-primary mb-8"><ArrowLeft className="w-5 h-5 mr-2"/>Back to Products</Link>
+      <BackButton className="mb-8" />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-        <div>
-          <div className="relative overflow-hidden rounded-2xl bg-ch-dark-gray">
-            <img src={imgs[imgIdx]} alt={p.name} className="w-full h-96 object-cover"/>
-            <div className="absolute top-4 right-4 flex gap-2">
-              <button className="p-2 bg-black/70 rounded-full hover:bg-black/90"><Share2 className="w-5 h-5 text-white"/></button>
-              <button onClick={() => setFav(v => !v)} className="p-2 bg-black/70 rounded-full hover:bg-black/90">
-                <Heart className={`w-5 h-5 ${fav ? 'text-ch-primary fill-current' : 'text-white'}`}/>
-              </button>
-            </div>
-          </div>
-          <div className="flex gap-4 mt-4 overflow-x-auto pb-2">
-            {imgs.map((src: string, i: number) => (
-              <button key={i} onClick={() => setImgIdx(i)} className={`w-20 h-20 rounded-lg overflow-hidden border-2 ${imgIdx===i?'border-ch-primary':'border-ch-gray/30'}`}>
-                <img src={src} alt={`${p.name} ${i+1}`} className="w-full h-full object-cover"/>
-              </button>
-            ))}
+        <div className="relative">
+          <ProductGallery images={imgs} alt={p.name} />
+          <div className="absolute top-4 right-4 flex gap-2">
+            <button className="p-2 bg-black/70 rounded-full hover:bg-black/90"><Share2 className="w-5 h-5 text-white"/></button>
+            <button onClick={() => setFav(v => !v)} className="p-2 bg-black/70 rounded-full hover:bg-black/90">
+              <Heart className={`w-5 h-5 ${fav ? 'text-ch-primary fill-current' : 'text-white'}`}/>
+            </button>
           </div>
         </div>
 

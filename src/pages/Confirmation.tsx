@@ -1,29 +1,20 @@
-import { useEffect, useMemo, useState, useRef } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Check, Shield, RotateCcw } from 'lucide-react'
 import { Link, useLocation } from 'react-router-dom'
-import { Order, Payment, Item, fetchOrderSummary } from '../services/orders'
 import { currency } from '../utils/format'
+import useOrderPolling from '../hooks/useOrderPolling'
 
 
 export default function Confirmation() {
   const { search, pathname } = useLocation()
   const params = useMemo(() => new URLSearchParams(search), [search])
 
-  const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [order, setOrder] = useState<Order | null>(null)
-  const [payment, setPayment] = useState<Payment>(null)
-  const [items, setItems] = useState<Item[]>([])
 
   // email fallback
   const [emailInput, setEmailInput] = useState('')
   const [askEmail, setAskEmail] = useState(false)
   const [submittingEmail, setSubmittingEmail] = useState(false)
-
-  // control de reintentos
-  const [attempts, setAttempts] = useState(0)
-  const maxAttempts = 10
-  const timerRef = useRef<number | null>(null)
 
   // 1) order_number
   const orderNumberFromQuery =
@@ -42,13 +33,6 @@ export default function Confirmation() {
   const orderNumber = orderNumberFromQuery || stored.order_number || ''
   const isValidEmail = (e: string) => /\S+@\S+\.\S+/.test(e)
 
-  // limpia timers al unmount
-  useEffect(() => {
-    return () => {
-      if (timerRef.current) window.clearTimeout(timerRef.current)
-    }
-  }, [])
-
   // decide si pedimos email o arrancamos búsqueda
   useEffect(() => {
     if (!orderNumber) {
@@ -58,7 +42,6 @@ export default function Confirmation() {
     }
     if (effectiveEmail && isValidEmail(effectiveEmail)) {
       setAskEmail(false)
-      startPolling(orderNumber, effectiveEmail, true)
       return
     }
     if (emailFromQuery && !isValidEmail(emailFromQuery)) {
@@ -68,51 +51,13 @@ export default function Confirmation() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [orderNumber])
 
-  // función que realiza 1 intento y agenda el siguiente si aplica
-  async function pollOnce(orderNum: string, email: string) {
-    try {
-      const res = await fetchOrderSummary(orderNum, email)
-      setOrder(res.order)
-      setPayment(res.payment)
-      setItems(res.items || [])
-      setError(null)
-      setLoading(false)
-
-      // persistimos para futuras vistas
-      localStorage.setItem('ch-last-checkout', JSON.stringify({ order_number: orderNum, email }))
-
-      // si aún no está pagada y quedan intentos → reintentar
-      if (res.order.status !== 'PAID' && attempts < maxAttempts) {
-        const next = attempts + 1
-        setAttempts(next)
-        timerRef.current = window.setTimeout(() => pollOnce(orderNum, email), 2000)
-      }
-    } catch (e) {
-      // error de red/servidor → intentos con límite
-      if (attempts < maxAttempts) {
-        const next = attempts + 1
-        setAttempts(next)
-        timerRef.current = window.setTimeout(() => pollOnce(orderNum, email), 2000)
-      } else {
-        setLoading(false)
-        setError('No pudimos obtener el estado de tu orden. Por favor, intenta nuevamente.')
-      }
-    }
-  }
-
-  // inicia/ reinicia el polling
-  function startPolling(orderNum: string, email: string, reset = false) {
-    if (timerRef.current) window.clearTimeout(timerRef.current)
-    if (reset) {
-      setAttempts(0)
-      setError(null)
-      setOrder(null)
-      setPayment(null)
-      setItems([])
-    }
-    setLoading(true)
-    pollOnce(orderNum, email)
-  }
+  const { order, payment, items, loading, attempts, maxAttempts, exhausted, startPolling, error: pollingError } = useOrderPolling({
+    orderNumber,
+    email: effectiveEmail,
+    autoStart: Boolean(orderNumber && effectiveEmail && isValidEmail(effectiveEmail)),
+    maxAttempts: 10,
+    intervalMs: 2000,
+  })
 
   const onSubmitEmail = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -128,7 +73,7 @@ export default function Confirmation() {
     try {
       setEffectiveEmail(emailInput)
       setAskEmail(false)
-      startPolling(orderNumber, emailInput, true)
+      startPolling(true)
     } finally {
       setSubmittingEmail(false)
     }
@@ -139,7 +84,7 @@ export default function Confirmation() {
     ? '¡Pago Rechazado!'
     : paid ? '¡Pago Confirmado!' : 'Procesando pago…'
 
-  const exhausted = !paid && !loading && attempts >= maxAttempts
+  const exhaustedLocal = !paid && exhausted
 
   return (
     <div className="min-h-[60vh] grid place-items-center">
@@ -182,13 +127,13 @@ export default function Confirmation() {
         {!askEmail && loading && (
           <p className="text-ch-gray mb-6">Consultando estado… (intento {attempts + 1}/{maxAttempts})</p>
         )}
-        {error && <p className="text-ch-primary mb-4">{error}</p>}
+        {(error || pollingError) && <p className="text-ch-primary mb-4">{error || pollingError}</p>}
 
         {/* Botón de Reintentar manual si se agotaron intentos o hay error */}
-        {!askEmail && exhausted && (
+        {!askEmail && exhaustedLocal && (
           <div className="mb-6">
             <button
-              onClick={() => effectiveEmail && startPolling(orderNumber, effectiveEmail, true)}
+              onClick={() => effectiveEmail && startPolling(true)}
               className="inline-flex items-center gap-2 bg-ch-primary text-black px-4 py-2 rounded-lg font-semibold"
             >
               <RotateCcw className="w-4 h-4" />

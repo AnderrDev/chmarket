@@ -1,5 +1,5 @@
 import type { OrderRepository } from '../../repositories/orders/OrderRepository'
-import type { Order, Payment, Item } from '../../../types/order'
+import type { Order, Payment, Item } from '../../../data/entities/order'
 
 export class GetOrderSummaryUseCase {
   constructor(private readonly repository: OrderRepository) {}

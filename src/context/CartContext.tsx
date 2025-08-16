@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useMemo, useReducer } from 'react'
-import { CartState, CartAction, CartItem } from '../types/cart';
-import { Product } from '../types/product';
+import { CartState, CartAction, CartItem } from '../data/entities/cart';
+import { Product } from '../data/entities/product';
 import { load, save } from '../utils/storage';
 import { keyOf } from '../utils/cart'
 

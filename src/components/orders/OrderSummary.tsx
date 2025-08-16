@@ -1,5 +1,5 @@
 import { currency } from '../../utils/format'
-import type { CartItem } from '../../types/cart'
+import type { CartItem } from '../../data/entities/cart'
 
 /**
  * Props para `OrderSummary`.

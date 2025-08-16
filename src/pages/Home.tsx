@@ -8,10 +8,8 @@ import { pickImage } from '../utils/catalogAdapter'
 import { useCatalog } from '../hooks/useCatalog'
 import ProductCardSkeleton from '../components/products/ProductCardSkeleton'
 
-
 export default function Home() {
   const { items, loading, error } = useCatalog(24)
-
   const top = useMemo(() => items.slice(0, 4), [items])
   const heroImage = useMemo(() => pickImage(items[0]?.images) || null, [items])
 

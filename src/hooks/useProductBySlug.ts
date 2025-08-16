@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { getProductBySlugUseCase } from '../container'
-import type { CatalogProduct } from '../types/catalog'
+import type { CatalogProduct } from '../data/entities/catalog'
 
 /**
  * Hook para obtener un producto del catálogo por `slug` desde Supabase.

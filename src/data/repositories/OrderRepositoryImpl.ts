@@ -1,5 +1,5 @@
 import type { OrderRepository } from '../../domain/repositories/orders/OrderRepository'
-import type { Order, Payment, Item } from '../../types/order'
+import type { Order, Payment, Item } from '../entities/order'
 import type { OrdersDataSource } from '../datasources/OrdersDataSource'
 
 export class OrderRepositoryImpl implements OrderRepository {

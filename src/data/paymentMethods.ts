@@ -2,7 +2,7 @@
 // =============================================
 // src/data/paymentMethods.ts
 // =============================================
-import { PaymentMethod } from "../types/payment";
+import { PaymentMethod } from "./entities/payment";
 
 export const paymentMethods: PaymentMethod[] = [
   { id: 'visa', name: 'Visa', type: 'credit_card', icon: '💳', installments: [1,3,6,12,18,24], description: 'Tarjeta de crédito Visa' },

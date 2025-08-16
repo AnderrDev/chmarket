@@ -13,3 +13,5 @@ export interface CustomerInfo {
   documentType: string
   documentNumber: string
 }
+
+

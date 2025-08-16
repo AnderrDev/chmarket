@@ -1,4 +1,4 @@
-import type { Order, Payment, Item } from '../../types/order'
+import type { Order, Payment, Item } from '../entities/order'
 
 export interface OrdersDataSource {
   fetchOrderSummary(orderNumber: string, email: string): Promise<{ order: Order; payment: Payment; items: Item[] }>

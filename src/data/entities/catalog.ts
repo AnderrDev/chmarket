@@ -10,10 +10,12 @@ export type CatalogProduct = {
   nutrition_facts: Record<string, any> | null
   rating: number | null
   reviews: number | null
-  images: any | null           // string[] o [{ url: string }]
+  images: any | null         // jsonb: puede ser string[] o [{url,...}]
   variant_id: string
   variant_label: string
   price_cents: number
   stock: number
   variant_active: boolean
 }
+
+

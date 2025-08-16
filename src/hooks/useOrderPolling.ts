@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import type { Order, Payment, Item } from '../types/order'
+import type { Order, Payment, Item } from '../data/entities/order'
 import { getOrderSummaryUseCase } from '../container'
 
 /**

@@ -13,3 +13,5 @@ export type CartAction =
   | { type: 'REMOVE'; key: string }    // ahora eliminamos por “key” (variant_id o id)
   | { type: 'SET_QTY'; key: string; quantity: number }
   | { type: 'CLEAR' }
+
+

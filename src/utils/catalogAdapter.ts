@@ -1,10 +1,10 @@
-import { CatalogProduct } from "../types/catalog"
-import { Product } from "../types/product"
+import { CatalogProduct } from "../data/entities/catalog"
+import { Product } from "../data/entities/product"
 
 /**
  * Extrae la primera imagen soportando múltiples formatos de `images` (string[], {url}[], {url}).
  */
-export function pickImage(images: unknown): string | undefined {
+export function pickImage(_images: unknown): string | undefined {
   // if (!images) return undefined
   // if (Array.isArray(images) && images.length > 0) {
   //   const f = (images as unknown[])[0] as unknown

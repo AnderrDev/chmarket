@@ -1,4 +1,4 @@
-import type { CatalogProduct } from '../../../types/catalog'
+import type { CatalogProduct } from '../../../data/entities/catalog'
 
 export interface ProductRepository {
   listCatalog(limit?: number): Promise<CatalogProduct[]>

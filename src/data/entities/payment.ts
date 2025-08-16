@@ -22,3 +22,5 @@ export interface PaymentInfo {
   documentType: string
   documentNumber: string
 }
+
+

@@ -1,4 +1,4 @@
-import type { CatalogProduct } from '../../types/catalog'
+import type { CatalogProduct } from '../entities/catalog'
 import { supabase } from '../../lib/supabase'
 
 export interface CatalogDataSource {

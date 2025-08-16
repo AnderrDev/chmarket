@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { listProductsUseCase } from '../container'
-import type { CatalogProduct } from '../types/catalog'
+import type { CatalogProduct } from '../data/entities/catalog'
 
 export type UseCatalogResult = {
   items: CatalogProduct[]

@@ -1,5 +1,5 @@
 import type { ProductRepository } from '../../repositories/catalog/ProductRepository'
-import type { CatalogProduct } from '../../../types/catalog'
+import type { CatalogProduct } from '../../../data/entities/catalog'
 
 export class GetProductByVariantIdUseCase {
   constructor(private readonly repository: ProductRepository) {}

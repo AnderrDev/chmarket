@@ -7,7 +7,14 @@ export type PreferencePayload = {
   items: { variant_id: string; quantity: number }[];
   currency?: string; // "COP"
   external_reference: string; // ej: "CH-<timestamp>"
-  customer: { firstName?: string; lastName?: string; email: string };
+  customer: {
+    firstName?: string;
+    lastName?: string;
+    email: string;
+    phone?: string;
+    documentType?: string;
+    documentNumber?: string;
+  };
   couponCode?: string | null; // 👈 nombre exacto que espera tu Edge Function
 };
 

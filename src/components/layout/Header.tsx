@@ -19,7 +19,7 @@ export default function Header() {
       <div className="container h-20 flex items-center justify-between">
         <div className="flex items-center gap-8">
           <Link to="/" className="flex items-center space-x-3">
-            <div className="bg-ch-primary rounded-lg p-1 shadow-lg flex items-center justify-center">
+            <div className=" rounded-lg p-1 shadow-lg flex items-center justify-center">
               <img
                 src="https://iqeuktsyzrkrbkjiqfvy.supabase.co/storage/v1/object/public/images/Captura%20de%20pantalla%202025-08-11%20a%20la(s)%209.37.27%20p.m..png" // Ruta de tu logo (puede ser .svg o .png)
                 alt="CH+"

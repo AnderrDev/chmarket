@@ -12,7 +12,14 @@ type CartItemInput = { variant_id: string; quantity: number };
 type CheckoutInput = {
   items: CartItemInput[];
   couponCode?: string;
-  customer: { email: string; firstName?: string; lastName?: string; phone?: string };
+  customer: {
+    email: string;
+    firstName?: string;
+    lastName?: string;
+    phone?: string;
+    documentType?: string;
+    documentNumber?: string;
+  };
 };
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;      // inyectado por Supabase
@@ -138,6 +145,9 @@ serve(async (req) => {
         discount_cents,
         total_cents,
         currency: "COP",
+        customer_document_type: body.customer.documentType ?? null,
+        customer_document_number: body.customer.documentNumber ?? null,
+        customer_phone: body.customer.phone ?? null,
       })
       .select("id")
       .single();

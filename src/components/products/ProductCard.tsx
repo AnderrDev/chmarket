@@ -35,6 +35,7 @@ export default function ProductCard({ p }: { p: CatalogProduct }) {
     reviews: p.reviews ?? 0,
     inStock: p.stock,
     servings: 0,
+    slug: p.slug || '', // aseguramos que slug esté presente
   }
 
   return (

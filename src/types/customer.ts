@@ -9,5 +9,7 @@ export interface CustomerInfo {
   address: string
   city: string
   zipCode: string
-  country: string
+  country: 'CO'
+  documentType: string
+  documentNumber: string
 }

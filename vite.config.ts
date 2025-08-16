@@ -6,7 +6,7 @@ export default defineConfig({
   plugins: [react()],
   server: {
     allowedHosts: [
-      'fdbadcaa53fb.ngrok-free.app' // dominio ngrok
+      '69d66bf4170c.ngrok-free.app' // dominio ngrok
     ],
     proxy: {
       '/api': 'http://localhost:3001'

@@ -1,12 +1,10 @@
 // src/pages/Payment.tsx
 import { useLocation, useNavigate } from 'react-router-dom'
 
-import { useState } from 'react'
+import { } from 'react'
 import { ArrowLeft, Shield } from 'lucide-react'
 import { useCart } from '../context/CartContext'
-import { paymentMethods } from '../data/paymentMethods'
 import { createPreference } from '../services/mp'
-import { PaymentInfo } from '../types/payment'
 import type { CartItem } from '../types/cart'
 import { currency } from '../utils/format'
 
@@ -15,29 +13,8 @@ export default function Payment() {
   const navigate = useNavigate()
   const { items, total } = useCart()
 
-  const [payment, setPayment] = useState<PaymentInfo>({
-    method: '',
-    installments: 1,
-    cardNumber: '',
-    cardName: '',
-    expiryDate: '',
-    cvv: '',
-    documentType: 'DNI',
-    documentNumber: '',
-  })
-
-  const getMethod = () => paymentMethods.find(m => m.id === payment.method)
-  const installmentAmount = (): string => (total / payment.installments).toFixed(2)
-
   async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
-
-    // Solo Mercado Pago (lo demás lo podemos simular, pero pediste MP only)
-    const method = getMethod()
-    if (!method || method.id !== 'mercadopago') {
-      alert('Selecciona Mercado Pago para continuar.')
-      return
-    }
 
     try {
       // 1) Customer: primero intenta leer del sessionStorage (desde Checkout)
@@ -79,6 +56,9 @@ export default function Payment() {
           firstName: customer.firstName,
           lastName: customer.lastName,
           email: customer.email,
+          phone: customer.phone,
+          documentType: customer.documentType,
+          documentNumber: customer.documentNumber,
         },
         couponCode, // 👈 nombre exacto que usa tu Edge Function
       }
@@ -101,103 +81,68 @@ export default function Payment() {
     }
   }
 
+  const discountCode: string | null = (state && typeof state.discount_code === 'string' && state.discount_code.trim()) || null
+  const subtotal = total
+
   return (
     <div className="container py-10">
       <button onClick={() => navigate(-1)} className="inline-flex items-center text-ch-primary mb-6">
         <ArrowLeft className="w-5 h-5 mr-2" /> Volver
       </button>
-      <h1 className="text-3xl font-secondary text-white mb-8">Método de Pago</h1>
+      <h1 className="text-3xl font-secondary text-white mb-8">Confirmar y Pagar</h1>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-6">
           <div className="bg-ch-dark-gray rounded-2xl p-6 border border-ch-gray/20">
-            <h2 className="text-xl text-white mb-4">Selecciona tu método de pago</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {paymentMethods.map(m => (
-                <button
-                  key={m.id}
-                  onClick={() => setPayment(s => ({ ...s, method: m.id, installments: 1 }))}
-                  className={`p-4 rounded-lg border-2 text-left ${
-                    payment.method === m.id ? 'border-ch-primary bg-ch-primary/10' : 'border-ch-gray/30 bg-ch-medium-gray'
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    <span className="text-2xl">{m.icon}</span>
-                    <div>
-                      <h3 className="text-white text-sm">{m.name}</h3>
-                      <p className="text-ch-gray text-xs">{m.description}</p>
-                    </div>
-                  </div>
-                </button>
-              ))}
-            </div>
+            <h2 className="text-xl text-white mb-4">Pago con Mercado Pago</h2>
+            <form onSubmit={onSubmit} className="space-y-4">
+              <div className="text-ch-gray text-sm">
+                Serás redirigido a Mercado Pago para completar el pago de forma segura.
+              </div>
+
+              <button type="submit" className="w-full bg-ch-primary text-black font-semibold py-3 rounded-lg">
+                Pagar {currency(total, 'es-CO', 'COP')}
+              </button>
+            </form>
           </div>
-
-          {/* Solo mostramos el bloque de datos cuando hay método seleccionado */}
-          {payment.method && (
-            <div className="bg-ch-dark-gray rounded-2xl p-6 border border-ch-gray/20">
-              <h2 className="text-xl text-white mb-4">Datos de Pago</h2>
-
-              {/* Para MP (redirección), no pedimos tarjeta aquí */}
-              {getMethod()?.id === 'mercadopago' ? (
-                <form onSubmit={onSubmit} className="space-y-4">
-                  <div className="text-ch-gray text-sm">
-                    Serás redirigido a Mercado Pago para completar el pago de forma segura.
-                  </div>
-
-                  {/* Documento (si lo quieres guardar para tu orden; MP no lo necesita aquí) */}
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm text-ch-gray mb-1">Tipo de Documento</label>
-                      <select
-                        value={payment.documentType}
-                        onChange={e => setPayment(s => ({ ...s, documentType: e.target.value }))}
-                        className="w-full px-3 py-2 bg-ch-medium-gray border border-ch-gray/30 rounded-md"
-                      >
-                        <option value="DNI">DNI</option>
-                        <option value="CUIT">CUIT</option>
-                        <option value="CUIL">CUIL</option>
-                        <option value="Pasaporte">Pasaporte</option>
-                      </select>
-                    </div>
-                    <Input
-                      label="Número de Documento"
-                      value={payment.documentNumber}
-                      onChange={v => setPayment(s => ({ ...s, documentNumber: v.replace(/\D/g, '') }))}
-                      placeholder="12345678"
-                    />
-                  </div>
-
-                  <button type="submit" className="w-full bg-ch-primary text-black font-semibold py-3 rounded-lg">
-                    Pagar {currency(total, 'es-CO', 'COP')}
-                  </button>
-                </form>
-              ) : (
-                // Si selecciona otra cosa, puedes dejar un aviso o simular
-                <div className="text-ch-gray text-sm">
-                  Selecciona Mercado Pago para continuar.
-                </div>
-              )}
-            </div>
-          )}
         </div>
 
-        {/* Resumen */}
+        {/* Resumen detallado */}
         <div className="bg-ch-dark-gray rounded-2xl p-6 border border-ch-gray/20 h-fit">
-          <h2 className="text-xl text-white mb-4">Resumen</h2>
-          <div className="flex justify-between items-center text-lg font-bold mb-4">
-            <span className="text-white">Total:</span>
-            <span className="text-ch-primary">{currency(total, 'es-CO', 'COP')}</span>
+          <h2 className="text-xl text-white mb-4">Resumen de pago</h2>
+          <div className="space-y-3 mb-4 max-h-[320px] overflow-y-auto pr-1">
+            {items.map((i) => (
+              <div key={(i as any).variant_id || `id:${i.id}`} className="flex justify-between items-start py-2 border-b border-ch-gray/20">
+                <div className="text-sm">
+                  <div className="text-white">{i.name}</div>
+                  <div className="text-ch-gray">x{i.quantity} · {currency(i.price, 'es-CO', 'COP')} c/u</div>
+                </div>
+                <div className="text-white font-semibold">{currency(i.price * i.quantity, 'es-CO', 'COP')}</div>
+              </div>
+            ))}
           </div>
-          {payment.method && payment.installments > 1 && (
-            <div className="bg-ch-medium-gray rounded-lg p-3 mb-4 text-ch-gray text-sm">
-              {payment.installments} cuotas de{' '}
-              <span className="text-white font-semibold">
-                {currency(Number(installmentAmount()), 'es-CO', 'COP')}
-              </span>
+          <div className="grid gap-2 text-sm">
+            <div className="flex justify-between">
+              <span className="text-ch-gray">Subtotal</span>
+              <span className="text-white font-semibold">{currency(subtotal, 'es-CO', 'COP')}</span>
             </div>
-          )}
-          <div className="flex items-center text-xs text-ch-gray">
+            <div className="flex justify-between">
+              <span className="text-ch-gray">Envío</span>
+              <span className="text-ch-gray">Se calcula al crear la preferencia</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-ch-gray">Descuento</span>
+              <span className="text-white font-semibold">{discountCode ? `Cupón: ${discountCode}` : '—'}</span>
+            </div>
+            <div className="flex justify-between border-t border-ch-gray/20 pt-2 text-lg">
+              <span className="text-white">Total estimado</span>
+              <span className="text-ch-primary font-bold">{currency(subtotal, 'es-CO', 'COP')}</span>
+            </div>
+            <div className="text-xs text-ch-gray">
+              El total final puede variar al aplicar envío y descuentos en el siguiente paso.
+            </div>
+          </div>
+          <div className="flex items-center text-xs text-ch-gray mt-4">
             <Shield className="w-4 h-4 mr-2 text-ch-primary" /> Compra protegida por Mercado Pago
           </div>
         </div>
@@ -206,33 +151,3 @@ export default function Payment() {
   )
 }
 
-function Input({
-  label,
-  value,
-  onChange,
-  placeholder = '',
-  maxLength,
-  type = 'text',
-}: {
-  label: string
-  value: string
-  onChange: (v: string) => void
-  placeholder?: string
-  maxLength?: number
-  type?: string
-}) {
-  return (
-    <div>
-      <label className="block text-sm text-ch-gray mb-1">{label}</label>
-      <input
-        type={type}
-        value={value}
-        maxLength={maxLength}
-        placeholder={placeholder}
-        onChange={e => onChange(e.target.value)}
-        className="w-full px-3 py-2 bg-ch-medium-gray border border-ch-gray/30 rounded-md"
-        required
-      />
-    </div>
-  )
-}

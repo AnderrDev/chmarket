@@ -1,7 +1,8 @@
 export type Order = {
   order_number: string
   email: string
-  status: 'CREATED' | 'PENDING' | 'PAID' | 'FAILED' | 'CANCELLED'
+  status: 'CREATED' | 'PAID' | 'FULFILLED' | 'CANCELLED' | 'REFUNDED'
+  payment_status?: 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELLED' | 'REFUNDED'
   currency: string
   subtotal_cents: number
   shipping_cents: number
@@ -10,13 +11,8 @@ export type Order = {
   created_at: string
 }
 
-export type Payment = {
-  provider: string
-  status: string
-  preference_id: string
-  external_reference: string
-  created_at: string
-} | null
+// El endpoint actual no devuelve un objeto payment; usamos null
+export type Payment = null
 
 export type Item = {
   variant_id: string

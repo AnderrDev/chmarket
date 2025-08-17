@@ -11,6 +11,10 @@ export type CatalogProduct = {
   rating: number | null
   reviews: number | null
   images: any | null         // jsonb: puede ser string[] o [{url,...}]
+  // Nuevos campos del esquema/vista
+  compare_at_price_cents?: number | null
+  currency?: string | null
+  is_featured?: boolean | null
   variant_id: string
   variant_label: string
   price_cents: number

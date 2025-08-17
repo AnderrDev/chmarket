@@ -35,7 +35,7 @@ export function catalogToProduct(p: CatalogProduct): Product & { variant_id?: st
     name: `${p.name} – ${p.variant_label}`,
     type: (p.type === 'protein' || p.type === 'creatine') ? p.type : 'protein',
     price: p.price_cents / 100,
-    originalPrice: undefined,
+    originalPrice: typeof p.compare_at_price_cents === 'number' ? p.compare_at_price_cents / 100 : undefined,
     image: img || '',
     images: img ? [img] : [],
     description: p.description || '',

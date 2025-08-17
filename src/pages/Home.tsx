@@ -10,7 +10,10 @@ import ProductCardSkeleton from '../components/products/ProductCardSkeleton'
 
 export default function Home() {
   const { items, loading, error } = useCatalog(24)
-  const top = useMemo(() => items.slice(0, 4), [items])
+  const top = useMemo(() => {
+    const featured = items.filter(p => (p as any).is_featured)
+    return (featured.length ? featured : items).slice(0, 4)
+  }, [items])
   const heroImage = useMemo(() => pickImage(items[0]?.images) || null, [items])
 
   return (

@@ -12,6 +12,8 @@ export interface PaymentMethod {
   description: string
 }
 
+// Nota: El nuevo flujo usa redirección a Mercado Pago y no persiste datos sensibles en el front.
+// Mantenemos esta interfaz solo si tu UI la utiliza localmente (no se envía al backend).
 export interface PaymentInfo {
   method: string
   installments: number

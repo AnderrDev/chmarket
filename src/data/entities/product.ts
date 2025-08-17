@@ -9,13 +9,14 @@ export interface Product {
   type: ProductType
   price: number
   originalPrice?: number
+  currency?: string
   image: string
   images: string[]
   description: string
   longDescription: string
   features: string[]
   ingredients: string[]
-  nutritionFacts: Record<string, string>
+  nutritionFacts: Record<string, any>
   rating: number
   reviews: number
   inStock: number

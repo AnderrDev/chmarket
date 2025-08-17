@@ -51,7 +51,7 @@ export default function Confirmation() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [orderNumber])
 
-  const { order, payment, items, loading, attempts, maxAttempts, exhausted, startPolling, error: pollingError } = useOrderPolling({
+  const { order, items, loading, attempts, maxAttempts, exhausted, startPolling, error: pollingError } = useOrderPolling({
     orderNumber,
     email: effectiveEmail,
     autoStart: Boolean(orderNumber && effectiveEmail && isValidEmail(effectiveEmail)),
@@ -164,8 +164,8 @@ export default function Confirmation() {
             </div>
 
             <div className="mt-4 p-3 bg-ch-medium-gray rounded-lg text-sm">
-              <Row label="Estado del Pago" value={payment?.status || order.status} tight />
-              <Row label="Método de Pago" value={payment?.provider || 'MercadoPago'} tight />
+              <Row label="Estado del Pago" value={order.payment_status || order.status} tight />
+              <Row label="Método de Pago" value={'MercadoPago'} tight />
             </div>
 
             {items.length > 0 && (

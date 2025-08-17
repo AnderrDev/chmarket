@@ -52,15 +52,7 @@ export default function Payment() {
       const payload = {
         items: itemsPayload,
         currency: 'COP',
-        external_reference: `CH-${Date.now()}`,
-        customer: {
-          firstName: customer.firstName,
-          lastName: customer.lastName,
-          email: customer.email,
-          phone: customer.phone,
-          documentType: customer.documentType,
-          documentNumber: customer.documentNumber,
-        },
+        email: customer.email as string,
         couponCode, // 👈 nombre exacto que usa tu Edge Function
       }
 

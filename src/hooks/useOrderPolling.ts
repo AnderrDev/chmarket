@@ -64,7 +64,7 @@ export function useOrderPolling({ orderNumber, email, autoStart = true, maxAttem
     try {
       const res = await getOrderSummaryUseCase.execute(orderNumber, email)
       setOrder(res.order)
-      setPayment(res.payment)
+      setPayment(null)
       setItems(res.items || [])
       setError(null)
       setLoading(false)

@@ -1,221 +1,219 @@
 // supabase/functions/create-preference/index.ts
-import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
+// Crea la orden + ítems (+ snapshot de cupón si aplica) y genera preferencia de Mercado Pago.
+// Guarda preference_id en orders.payment_preference_id.
+// Requiere: SUPABASE_URL, SERVICE_ROLE_KEY, MP_ACCESS_TOKEN
+
+import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-// CORS
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
+const SERVICE_ROLE_KEY = Deno.env.get("SERVICE_ROLE_KEY")!;
+const MP_ACCESS_TOKEN = Deno.env.get("MP_ACCESS_TOKEN")!;
+
+type CartItem = { variant_id: string; quantity: number };
+
+type Payload = {
+  email: string;
+  items: CartItem[];
+  shippingAddress?: Record<string, unknown>;
+  billingAddress?: Record<string, unknown>;
+  couponCode?: string;          // ej: "WELCOME10"
+  shippingCents?: number;       // opcional (0 por defecto)
+  currency?: string;            // "COP" por defecto
 };
 
-type CartItemInput = { variant_id: string; quantity: number };
-type CheckoutInput = {
-  items: CartItemInput[];
-  couponCode?: string;
-  customer: {
-    email: string;
-    firstName?: string;
-    lastName?: string;
-    phone?: string;
-    documentType?: string;
-    documentNumber?: string;
-  };
-};
-
-const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;      // inyectado por Supabase
-const SERVICE_ROLE = Deno.env.get("SERVICE_ROLE_KEY")!;   // tu secret
-const MP_TOKEN = Deno.env.get("MP_ACCESS_TOKEN")!;
-const FRONTEND_BASE_URL = Deno.env.get("FRONTEND_BASE_URL")!;
-const SHIPPING_CENTS_DEFAULT = Number(Deno.env.get("SHIPPING_CENTS_DEFAULT") ?? "1200000");
-const FREE_SHIPPING_THRESHOLD_CENTS = Number(Deno.env.get("FREE_SHIPPING_THRESHOLD_CENTS") ?? "5000000");
-
-const sb = createClient(SUPABASE_URL, SERVICE_ROLE, { auth: { persistSession: false } });
-
-function generateOrderNumber() { return `CH${Math.floor(100000 + Math.random() * 900000)}`; }
-
-function badRequest(msg: string, extra: Record<string, unknown> = {}) {
-  return new Response(JSON.stringify({ error: msg, ...extra }), {
-    status: 400,
-    headers: { ...corsHeaders, "Content-Type": "application/json" },
+const mpFetch = (path: string, init?: RequestInit) =>
+  fetch(`https://api.mercadopago.com${path}`, {
+    ...init,
+    headers: {
+      Authorization: `Bearer ${MP_ACCESS_TOKEN}`,
+      "Content-Type": "application/json",
+      ...(init?.headers ?? {}),
+    },
   });
-}
-function ok(data: unknown) {
-  return new Response(JSON.stringify(data), {
-    status: 200,
-    headers: { ...corsHeaders, "Content-Type": "application/json" },
+
+// Utilidad: CORS
+function cors(json: unknown, status = 200) {
+  return new Response(JSON.stringify(json), {
+    status,
+    headers: {
+      "Content-Type": "application/json",
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+      "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+    },
   });
 }
 
-serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
-  if (req.method !== "POST") return badRequest("Use POST");
+Deno.serve(async (req) => {
+  if (req.method === "OPTIONS") return cors({ ok: true });
 
   try {
-    const body = (await req.json()) as CheckoutInput;
-    if (!body?.customer?.email) return badRequest("Missing customer email");
-    if (!Array.isArray(body.items) || body.items.length === 0) return badRequest("Empty cart");
+    const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
+    const origin = new URL(req.url).origin;
 
-    // 1) Traer variantes (sin embed de inventories para evitar nulls)
+    const body = (await req.json()) as Payload;
+    if (!body?.email || !Array.isArray(body.items) || body.items.length === 0) {
+      return cors({ error: "Invalid payload" }, 400);
+    }
+
+    const currency = body.currency ?? "COP";
+    const shippingCents = Math.max(0, body.shippingCents ?? 0);
+
+    // 1) Traer variantes y producto para snapshot de nombre
     const variantIds = body.items.map((i) => i.variant_id);
-    const { data: variants, error: vErr } = await sb
+    const { data: rows, error: rowsErr } = await supabase
       .from("product_variants")
-      .select("id, label, price_cents, currency, product_id, is_active, products(name)")
+      .select("id, label, price_cents, in_stock, product_id, products(name)")
       .in("id", variantIds);
-    if (vErr) throw vErr;
-
-    if (!variants || variants.length === 0) {
-      return badRequest("Variants not found", { variantIds });
+    if (rowsErr) throw rowsErr;
+    if (!rows || rows.length !== variantIds.length) {
+      return cors({ error: "Some variants not found" }, 400);
     }
+    const mapVariant = new Map(rows.map((r) => [r.id, r]));
 
-    // 2) Traer inventarios por separado y construir mapa variant_id -> in_stock
-    const { data: stocks, error: sErr } = await sb
-      .from("inventories")
-      .select("variant_id, in_stock")
-      .in("variant_id", variantIds);
-    if (sErr) throw sErr;
-
-    const stockByVariant = new Map<string, number>(
-      (stocks ?? []).map((r: any) => [String(r.variant_id), Number(r.in_stock ?? 0)])
-    );
-
-    // 3) Validaciones de cada ítem (activo, moneda, stock)
-    const byId = new Map(variants.map((v: any) => [String(v.id), v]));
+    // 2) Calcular subtotal
+    let subtotal = 0;
     for (const it of body.items) {
-      const v = byId.get(String(it.variant_id));
-      if (!v) return badRequest("Variant not found", { variant_id: it.variant_id });
-
-      if (!v.is_active) return badRequest("Variant inactive", { variant_id: it.variant_id });
-
-      if (v.currency !== "COP") return badRequest("Only COP supported", { variant_id: it.variant_id });
-
-      const stock = Number(stockByVariant.get(String(it.variant_id)) ?? 0);
-      if (it.quantity <= 0 || it.quantity > stock) {
-        return badRequest("Invalid quantity", { variant_id: it.variant_id, stock });
+      const v = mapVariant.get(it.variant_id);
+      if (!v) return cors({ error: `Variant not found: ${it.variant_id}` }, 400);
+      if (!Number.isFinite(it.quantity) || it.quantity <= 0) {
+        return cors({ error: `Invalid quantity for ${it.variant_id}` }, 400);
       }
+      // No disminuimos stock aquí; se hace en webhook cuando el pago queda APPROVED
+      subtotal += v.price_cents * it.quantity;
     }
 
-    // 4) Armar líneas y subtotal
-    const lineItems = body.items.map((it) => {
-      const v = byId.get(String(it.variant_id))!;
-      return {
-        variant_id: String(v.id),
-        product_id: String(v.product_id),
-        name: (v as any).products?.name as string,
-        variant_label: String(v.label),
-        unit_price_cents: Number(v.price_cents),
-        quantity: Number(it.quantity),
-      };
-    });
+    // 3) Cupón (simple a nivel de orden)
+    let discountCents = 0;
+    let finalShipping = shippingCents;
+    let discountRow: any = null;
 
-    const subtotal_cents = lineItems.reduce((t, l) => t + l.unit_price_cents * l.quantity, 0);
-
-    // 5) Envío + cupón (básico)
-    let shipping_cents = subtotal_cents >= FREE_SHIPPING_THRESHOLD_CENTS ? 0 : SHIPPING_CENTS_DEFAULT;
-
-    let discount_cents = 0;
     if (body.couponCode) {
-      const { data: coupon } = await sb
+      const code = String(body.couponCode).toUpperCase();
+      const { data: dc, error: dcErr } = await supabase
         .from("discount_codes")
         .select("*")
-        .eq("code", body.couponCode.trim().toUpperCase())
+        .eq("code", code)
         .eq("is_active", true)
         .maybeSingle();
+      if (dcErr) throw dcErr;
 
-      if (coupon?.type === "PERCENT") {
-        discount_cents = Math.floor((subtotal_cents * Number(coupon.value_percent)) / 100);
-      } else if (coupon?.type === "FIXED") {
-        discount_cents = Math.min(Number(coupon.value_cents ?? 0), subtotal_cents);
-      } else if (coupon?.type === "FREE_SHIPPING") {
-        discount_cents = shipping_cents; shipping_cents = 0;
+      if (dc) {
+        discountRow = dc;
+        if (dc.type === "PERCENT") {
+          const pct = Math.max(0, Math.min(100, dc.value_percent ?? 0));
+          discountCents = Math.floor((subtotal * pct) / 100);
+        } else if (dc.type === "FIXED") {
+          discountCents = Math.max(0, Math.min(dc.value_cents ?? 0, subtotal));
+        } else if (dc.type === "FREE_SHIPPING") {
+          finalShipping = 0;
+        }
       }
     }
 
-    const total_cents = Math.max(0, subtotal_cents + shipping_cents - discount_cents);
+    const total = Math.max(0, subtotal + finalShipping - discountCents);
 
-    // 6) Crear orden
-    const order_number = generateOrderNumber();
-    const { data: order, error: oErr } = await sb
+    // 4) order_number
+    const orderNumber = `CH${Date.now()}`;
+
+    // 5) Insertar orden (status CREATED / payment PENDING)
+    const { data: order, error: oErr } = await supabase
       .from("orders")
       .insert({
-        order_number,
-        email: body.customer.email.toLowerCase(),
+        order_number: orderNumber,
+        email: body.email,
         status: "CREATED",
-        subtotal_cents,
-        shipping_cents,
-        discount_cents,
-        total_cents,
-        currency: "COP",
-        customer_document_type: body.customer.documentType ?? null,
-        customer_document_number: body.customer.documentNumber ?? null,
-        customer_phone: body.customer.phone ?? null,
+        subtotal_cents: subtotal,
+        shipping_cents: finalShipping,
+        discount_cents: discountCents,
+        total_cents: total,
+        currency,
+        shipping_address: body.shippingAddress ?? null,
+        billing_address: body.billingAddress ?? null,
+        payment_provider: "MERCADO_PAGO",
+        payment_status: "PENDING",
+        payment_external_reference: orderNumber,
       })
       .select("id")
       .single();
     if (oErr) throw oErr;
 
-    // 7) Items
-    const { error: oiErr } = await sb.from("order_items").insert(
-      lineItems.map((li) => ({
+    // 6) Insertar items con snapshot
+    const itemsToInsert = body.items.map((it) => {
+      const v = mapVariant.get(it.variant_id)!;
+      const name = v.products?.name ?? ""; // snapshot mínimo, opcional
+      return {
         order_id: order.id,
-        product_id: li.product_id,
-        variant_id: li.variant_id,
-        name_snapshot: li.name,
-        variant_label: li.variant_label,
-        unit_price_cents: li.unit_price_cents,
-        quantity: li.quantity,
-      }))
-    );
+        product_id: v.product_id,
+        variant_id: v.id,
+        name_snapshot: name,
+        variant_label: v.label,
+        unit_price_cents: v.price_cents,
+        quantity: it.quantity,
+      };
+    });
+    const { error: oiErr } = await supabase.from("order_items").insert(itemsToInsert);
     if (oiErr) throw oiErr;
 
-    // 8) Preferencia MP
-    const mpRes = await fetch("https://api.mercadopago.com/checkout/preferences", {
+    // 7) Snapshot de descuento (si aplica)
+    if (discountRow) {
+      const { error: odErr } = await supabase.from("order_discounts").insert({
+        order_id: order.id,
+        discount_id: discountRow.id,
+        code_snapshot: discountRow.code,
+        type_snapshot: discountRow.type,
+        value_percent_snapshot: discountRow.value_percent ?? null,
+        value_cents_snapshot: discountRow.value_cents ?? null,
+        amount_applied_cents: discountCents,
+        currency,
+      });
+      if (odErr) throw odErr;
+    }
+
+    // 8) Crear preferencia MP
+    const prefRes = await mpFetch("/checkout/preferences", {
       method: "POST",
-      headers: { Authorization: `Bearer ${MP_TOKEN}`, "Content-Type": "application/json" },
       body: JSON.stringify({
-        items: lineItems.map((li) => ({
-          title: `${li.name} - ${li.variant_label}`,
-          quantity: li.quantity,
-          currency_id: "COP",
-          unit_price: li.unit_price_cents / 100,
-        })),
-        external_reference: order_number,
+        items: body.items.map((it) => {
+          const v = mapVariant.get(it.variant_id)!;
+          return {
+            title: v.label,
+            quantity: it.quantity,
+            unit_price: v.price_cents / 100,
+            currency_id: currency,
+          };
+        }),
+        external_reference: orderNumber,
         back_urls: {
-          success: `${FRONTEND_BASE_URL}/success?external_reference=${order_number}`,
-          pending: `${FRONTEND_BASE_URL}/pending?external_reference=${order_number}`,
-          failure: `${FRONTEND_BASE_URL}/failure?external_reference=${order_number}`,
+          success: `${origin}/success`,
+          pending: `${origin}/pending`,
+          failure: `${origin}/failure`,
         },
         auto_return: "approved",
-        payer: { email: body.customer.email },
-        statement_descriptor: "CH+ Supplements",
       }),
     });
-    if (!mpRes.ok) {
-      const detail = await mpRes.text();
-      return badRequest("Mercado Pago error", { detail });
+    if (!prefRes.ok) {
+      const t = await prefRes.text();
+      throw new Error(`MercadoPago error: ${t}`);
     }
-    const pref = await mpRes.json();
+    const pref = await prefRes.json();
 
-    // 9) Payment PENDING
-    await sb.from("payments").insert({
-      order_id: order.id,
-      provider: "MERCADO_PAGO",
-      status: "PENDING",
-      amount_cents: total_cents,
-      currency: "COP",
-      preference_id: pref.id,
-      external_reference: order_number,
-      raw_payload: pref,
-    });
+    // 9) Guardar preference_id en la orden
+    const { error: upErr } = await supabase
+      .from("orders")
+      .update({ payment_preference_id: pref.id })
+      .eq("id", order.id);
+    if (upErr) throw upErr;
 
-    return ok({
-      order_number,
+    // 10) Responder
+    return cors({
+      order_number: orderNumber,
       preference_id: pref.id,
-      init_point: pref.init_point ?? pref.sandbox_init_point,
-      total_cents,
-      currency: "COP",
+      init_point: pref.init_point ?? null,
+      sandbox_init_point: pref.sandbox_init_point ?? null,
     });
   } catch (e) {
-    console.error(e);
-    return badRequest("Unexpected error", { detail: String(e) });
+    return cors({ error: String(e) }, 400);
   }
 });

@@ -81,8 +81,13 @@ export default function ProductCard({ p }: { p: CatalogProduct }) {
 
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-2">
+            {typeof p.compare_at_price_cents === 'number' && p.compare_at_price_cents > p.price_cents && (
+              <span className="text-base text-ch-gray line-through mr-1">
+                {currency(p.compare_at_price_cents / 100, 'es-CO', p.currency || 'COP')}
+              </span>
+            )}
             <span className="text-2xl font-bold text-white">
-              {currency(p.price_cents / 100, 'es-CO', 'COP')}
+              {currency(p.price_cents / 100, 'es-CO', p.currency || 'COP')}
             </span>
           </div>
           <div className="flex items-center gap-1 text-sm text-white">

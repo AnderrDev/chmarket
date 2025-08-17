@@ -24,7 +24,9 @@ export default function ProductDetail() {
   const first = pickImage(p.images)
   const imgs: string[] = first ? [first] : []
 
-  const priceCOP = p.price_cents / 100
+  const price = p.price_cents / 100
+  const original = typeof (p as any).compare_at_price_cents === 'number' ? (p as any).compare_at_price_cents / 100 : undefined
+  const currencyCode = (p as any).currency || 'COP'
   const inStock = p.stock ?? 0
 
   return (
@@ -60,7 +62,10 @@ export default function ProductDetail() {
           </div>
 
           <div className="flex items-center gap-4">
-            <span className="text-4xl font-bold text-white">{currency(priceCOP, 'es-CO', 'COP')}</span>
+            {typeof original === 'number' && original > price && (
+              <span className="text-lg text-ch-gray line-through">{currency(original, 'es-CO', currencyCode)}</span>
+            )}
+            <span className="text-4xl font-bold text-white">{currency(price, 'es-CO', currencyCode)}</span>
           </div>
 
           <p className="text-ch-gray text-lg">{p.long_description}</p>
@@ -112,7 +117,7 @@ export default function ProductDetail() {
             disabled={inStock === 0}
             className="w-full bg-ch-primary text-black py-4 rounded-lg text-lg font-semibold hover:opacity-90 disabled:opacity-50"
           >
-            {inStock === 0 ? 'Out of Stock' : `Add to Cart – ${currency(priceCOP, 'es-CO', 'COP')}`}
+            {inStock === 0 ? 'Out of Stock' : `Add to Cart – ${currency(price, 'es-CO', currencyCode)}`}
           </button>
         </div>
       </div>

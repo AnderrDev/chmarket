@@ -6,15 +6,11 @@
 export type PreferencePayload = {
   items: { variant_id: string; quantity: number }[];
   currency?: string; // "COP"
-  external_reference: string; // ej: "CH-<timestamp>"
-  customer: {
-    firstName?: string;
-    lastName?: string;
-    email: string;
-    phone?: string;
-    documentType?: string;
-    documentNumber?: string;
-  };
+  // La Edge Function espera email en el nivel raíz
+  email: string;
+  // Datos opcionales si extiendes la función
+  shippingAddress?: Record<string, unknown>;
+  billingAddress?: Record<string, unknown>;
   couponCode?: string | null; // 👈 nombre exacto que espera tu Edge Function
 };
 
@@ -45,8 +41,6 @@ export async function createPreference(payload: PreferencePayload): Promise<{
   preference_id: string;
   init_point: string;
   sandbox_init_point?: string;
-  total_cents: number;
-  currency: string;
 }> {
   const base = getFunctionsBaseUrl();
   const url = `${base}/create-preference`;
@@ -81,7 +75,5 @@ export async function createPreference(payload: PreferencePayload): Promise<{
     preference_id: string;
     init_point: string;
     sandbox_init_point?: string;
-    total_cents: number;
-    currency: string;
-  }>;
+  }>; 
 }

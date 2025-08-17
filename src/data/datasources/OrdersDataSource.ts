@@ -15,11 +15,10 @@ function getFunctionsBaseUrl(): string {
 export class FunctionsOrdersDataSource implements OrdersDataSource {
   async fetchOrderSummary(orderNumber: string, email: string) {
     const base = getFunctionsBaseUrl()
-    const res = await fetch(`${base}/order-status`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ order_number: orderNumber, email }),
-    })
+    const url = new URL(`${base}/order-status`)
+    url.searchParams.set('order_number', orderNumber)
+    if (email) url.searchParams.set('email', email)
+    const res = await fetch(url.toString(), { method: 'GET' })
     if (!res.ok) throw new Error(await res.text())
     return res.json() as Promise<{ order: Order; payment: Payment; items: Item[] }>
   }

@@ -1,9 +1,9 @@
-import type { CatalogProduct } from '../../../data/entities/catalog'
+import type { CatalogViewRow } from '../../../data/entities/catalog'
 
 export interface ProductRepository {
-  listCatalog(limit?: number): Promise<CatalogProduct[]>
-  getBySlug(slug: string): Promise<CatalogProduct | null>
-  getByVariantId(variantId: string): Promise<CatalogProduct | null>
+  listCatalog(limit?: number): Promise<CatalogViewRow[]>
+  getBySlug(slug: string): Promise<CatalogViewRow | null>
+  getByVariantId(variantId: string): Promise<CatalogViewRow | null>
 }
 
 

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { getProductBySlugUseCase } from '../container'
-import type { CatalogProduct } from '../data/entities/catalog'
+import type { CatalogViewRow } from '../data/entities/catalog'
 
 /**
  * Hook para obtener un producto del catálogo por `slug` desde Supabase.
@@ -8,7 +8,7 @@ import type { CatalogProduct } from '../data/entities/catalog'
  * - DIP: expone una API estable (`{ product, loading, error }`).
  */
 export function useProductBySlug(slug?: string) {
-  const [product, setProduct] = useState<CatalogProduct | null>(null)
+  const [product, setProduct] = useState<CatalogViewRow | null>(null)
   const [loading, setLoading] = useState<boolean>(false)
   const [error, setError] = useState<string | null>(null)
 

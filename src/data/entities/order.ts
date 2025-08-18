@@ -23,4 +23,14 @@ export type Item = {
   quantity: number
 }
 
+// Payload para crear preferencias de pago (Mercado Pago)
+export type PreferencePayload = {
+  items: { variant_id: string; quantity: number }[]
+  currency?: string
+  email: string
+  shippingAddress?: Record<string, unknown>
+  billingAddress?: Record<string, unknown>
+  couponCode?: string | null
+}
+
 

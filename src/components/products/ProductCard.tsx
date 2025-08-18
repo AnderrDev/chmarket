@@ -1,39 +1,40 @@
 import { Check, Heart, Star } from 'lucide-react'
 import { useState } from 'react'
 import { useCart } from '../../context/CartContext'
-import { CatalogProduct } from '../../data/entities/catalog'
+import { CatalogViewRow, CatalogViewVariant } from '../../data/entities/catalog'
 import type { CartItem } from '../../data/entities/cart'
 import { pickImage } from '../../utils/catalogAdapter'
 import { currency } from '../../utils/format'
 import { Link } from 'react-router-dom'
 
 
-export default function ProductCard({ p }: { p: CatalogProduct }) {
+export default function ProductCard({ p }: { p: CatalogViewRow }) {
   const { add } = useCart()
   const [fav, setFav] = useState(false)
 
   const img = pickImage(p.images)
-  const canBuy = p.stock > 0
+  const defaultVariant: CatalogViewVariant | undefined = (p.variants || []).find(v => v.is_active) || (p.variants || [])[0]
+  const canBuy = !!defaultVariant && defaultVariant.stock > 0
 
   // Objeto compatible con el carrito, INCLUYE variant_id ✅
   const productForCart: Omit<CartItem, 'quantity'> = {
     // dejamos id como fallback legacy, pero la clave real será variant_id
     id: 0,
-    variant_id: p.variant_id,                      // << clave que usará el reducer
-    name: `${p.name} – ${p.variant_label}`,
-    type: (p.type || 'protein') as 'creatine' | 'protein', // adapta si tienes más tipos
-    price: p.price_cents / 100,
+    variant_id: defaultVariant?.variant_id || '',
+    name: `${p.name}${defaultVariant ? ` – ${defaultVariant.variant_label}` : ''}`,
+    type: (p.type || 'protein') as 'creatine' | 'protein',
+    price: (defaultVariant?.price_cents || 0) / 100,
     originalPrice: undefined,
     image: img || 'https://images.unsplash.com/photo-1517033777-6203d1f5c3f1?q=80&w=800&auto=format&fit=crop',
     images: [img].filter(Boolean) as string[],
     description: p.description || '',
     longDescription: p.long_description || '',
-    features: p.features || [],
-    ingredients: p.ingredients || [],
-    nutritionFacts: p.nutrition_facts || {},
-    rating: p.rating ?? 4.8,
-    reviews: p.reviews ?? 0,
-    inStock: p.stock,
+    features: (p as any).features || [],
+    ingredients: (p as any).ingredients || [],
+    nutritionFacts: (p as any).nutrition_facts || {},
+    rating: (p as any).rating ?? 4.8,
+    reviews: (p as any).reviews ?? 0,
+    inStock: defaultVariant?.stock || 0,
     servings: 0,
     slug: p.slug || '', // aseguramos que slug esté presente
   }
@@ -65,7 +66,9 @@ export default function ProductCard({ p }: { p: CatalogProduct }) {
         </span>
 
         <div className="mt-3 text-xl font-secondary text-white">{p.name}</div>
-        <div className="text-ch-gray text-sm mt-1">{p.variant_label}</div>
+        {defaultVariant && (
+          <div className="text-ch-gray text-sm mt-1">{defaultVariant.variant_label}</div>
+        )}
         {p.description && <p className="text-ch-gray text-sm mt-2 line-clamp-2">{p.description}</p>}
 
         {p.features?.length ? (
@@ -81,13 +84,13 @@ export default function ProductCard({ p }: { p: CatalogProduct }) {
 
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-2">
-            {typeof p.compare_at_price_cents === 'number' && p.compare_at_price_cents > p.price_cents && (
+            {typeof defaultVariant?.compare_at_price_cents === 'number' && defaultVariant!.compare_at_price_cents! > (defaultVariant!.price_cents) && (
               <span className="text-base text-ch-gray line-through mr-1">
-                {currency(p.compare_at_price_cents / 100, 'es-CO', p.currency || 'COP')}
+                {currency((defaultVariant!.compare_at_price_cents as number) / 100, 'es-CO', defaultVariant!.currency || 'COP')}
               </span>
             )}
             <span className="text-2xl font-bold text-white">
-              {currency(p.price_cents / 100, 'es-CO', p.currency || 'COP')}
+              {currency((defaultVariant?.price_cents || 0) / 100, 'es-CO', defaultVariant?.currency || 'COP')}
             </span>
           </div>
           <div className="flex items-center gap-1 text-sm text-white">

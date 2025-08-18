@@ -48,3 +48,5 @@ group by
   p.images, p.is_featured, p.is_active;
 
 commit;
+
+

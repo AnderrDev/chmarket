@@ -1,4 +1,4 @@
-import { CatalogProduct } from "../data/entities/catalog"
+import { CatalogViewRow, CatalogViewVariant } from "../data/entities/catalog"
 import { Product } from "../data/entities/product"
 
 /**
@@ -26,30 +26,31 @@ export function pickImage(_images: unknown): string | undefined {
  * Mapea `CatalogProduct` (modelo DB) a `Product` (modelo UI) usado en tarjetas o carrito.
  * Incluye un id numérico derivado estable a partir de `variant_id` para compatibilidad.
  */
-export function catalogToProduct(p: CatalogProduct): Product & { variant_id?: string; variant_label?: string } {
-  const img = pickImage(p.images)
+export function catalogToProduct(row: CatalogViewRow, variant?: CatalogViewVariant): Product & { variant_id?: string; variant_label?: string } {
+  const img = pickImage(row.images)
+  const v = variant || (row.variants || []).find(v => v.is_active) || (row.variants || [])[0]
   return {
     // id numérico requerido por Cart: mapeamos con un hash estable de variant_id
-    id: hashToNumber(p.variant_id),
-    variant_id: p.variant_id,
-    name: `${p.name} – ${p.variant_label}`,
-    type: (p.type === 'protein' || p.type === 'creatine') ? p.type : 'protein',
-    price: p.price_cents / 100,
-    originalPrice: typeof p.compare_at_price_cents === 'number' ? p.compare_at_price_cents / 100 : undefined,
+    id: hashToNumber(v?.variant_id || ''),
+    variant_id: v?.variant_id,
+    name: `${row.name}${v ? ` – ${v.variant_label}` : ''}`,
+    type: (row.type === 'protein' || row.type === 'creatine') ? row.type : 'protein',
+    price: (v?.price_cents || 0) / 100,
+    originalPrice: typeof v?.compare_at_price_cents === 'number' ? (v!.compare_at_price_cents as number) / 100 : undefined,
     image: img || '',
     images: img ? [img] : [],
-    description: p.description || '',
-    longDescription: p.long_description || '',
-    features: p.features || [],
-    ingredients: p.ingredients || [],
-    nutritionFacts: p.nutrition_facts || {},
-    rating: p.rating ?? 4.8,
-    reviews: p.reviews ?? 0,
-    inStock: p.stock ?? 0,
+    description: (row as any).description || '',
+    longDescription: (row as any).long_description || '',
+    features: (row as any).features || [],
+    ingredients: (row as any).ingredients || [],
+    nutritionFacts: (row as any).nutrition_facts || {},
+    rating: (row as any).rating ?? 4.8,
+    reviews: (row as any).reviews ?? 0,
+    inStock: v?.stock ?? 0,
     servings: 0,
     // slug proveniente del catálogo
-    slug: p.slug,
-    variant_label: p.variant_label,
+    slug: row.slug,
+    variant_label: v?.variant_label,
   }
 }
 

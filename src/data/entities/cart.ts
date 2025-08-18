@@ -14,4 +14,7 @@ export type CartAction =
   | { type: 'SET_QTY'; key: string; quantity: number }
   | { type: 'CLEAR' }
 
+// Tipos auxiliares usados por utilidades del carrito
+export type Keyable = { variant_id?: string; id?: number }
+
 

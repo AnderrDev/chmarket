@@ -1,5 +1,5 @@
-import { useParams } from 'react-router-dom'
-import { useState } from 'react'
+import { useParams, useSearchParams } from 'react-router-dom'
+import { useEffect, useMemo, useState } from 'react'
 import { Check, Heart, Share2, Star, Truck, RotateCcw, Shield } from 'lucide-react'
 import { useCart } from '../context/CartContext'
 import type { CartItem } from '../data/entities/cart'
@@ -13,21 +13,42 @@ import BackButton from '../components/common/BackButton'
 
 export default function ProductDetail() {
   const { slug } = useParams()
+  const [searchParams, setSearchParams] = useSearchParams()
   const { add } = useCart()
   const [fav, setFav] = useState(false)
   const { product: p, loading } = useProductBySlug(slug)
 
+  const initialVariant = useMemo(() => (p?.variants || []).find(v => v.is_active) || (p?.variants || [])[0], [p])
+  const [selectedVariantId, setSelectedVariantId] = useState<string | undefined>(initialVariant?.variant_id)
+  const selectedVariant = useMemo(() => (p?.variants || []).find(v => v.variant_id === selectedVariantId) || initialVariant, [p, selectedVariantId, initialVariant])
+  const price = (selectedVariant?.price_cents || 0) / 100
+  const original = typeof selectedVariant?.compare_at_price_cents === 'number' ? (selectedVariant!.compare_at_price_cents as number) / 100 : undefined
+  const currencyCode = selectedVariant?.currency || 'COP'
+  const inStock = selectedVariant?.stock ?? 0
+  const ratingValue = Number(((p as any)?.rating ?? (p as any)?.rating_avg ?? 0))
+  const reviewsCount = (p as any)?.reviews ?? (p as any)?.reviews_count ?? 0
+
+  useEffect(() => {
+    const qp = searchParams.get('v')
+    if (qp && (p?.variants || []).some(v => v.variant_id === qp)) {
+      setSelectedVariantId(qp)
+    } else if (initialVariant?.variant_id) {
+      setSelectedVariantId(initialVariant.variant_id)
+    }
+  }, [p, searchParams, initialVariant])
+
+  useEffect(() => {
+    if (!selectedVariant?.variant_id) return
+    const curr = new URLSearchParams(searchParams)
+    curr.set('v', selectedVariant.variant_id)
+    setSearchParams(curr, { replace: true })
+  }, [selectedVariant?.variant_id])
+
   if (loading) return <ProductDetailSkeleton />
   if (!p) return <div className="container py-16 text-ch-gray">Producto no encontrado</div>
 
-  // Normaliza imágenes con util central
   const first = pickImage(p.images)
   const imgs: string[] = first ? [first] : []
-
-  const price = p.price_cents / 100
-  const original = typeof (p as any).compare_at_price_cents === 'number' ? (p as any).compare_at_price_cents / 100 : undefined
-  const currencyCode = (p as any).currency || 'COP'
-  const inStock = p.stock ?? 0
 
   return (
     <div className="container py-10">
@@ -46,18 +67,33 @@ export default function ProductDetail() {
 
         <div className="space-y-6">
           <div>
-            <span className="inline-block px-3 py-1 rounded-full text-sm font-semibold bg-ch-primary/20 text-ch-primary border border-ch-primary/30">
-              {p.type?.toUpperCase()}
-            </span>
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="inline-block px-3 py-1 rounded-full text-sm font-semibold bg-ch-primary/20 text-ch-primary border border-ch-primary/30">
+                {p.type?.toUpperCase()}
+              </span>
+              {(p as any).is_featured && (
+                <span className="inline-block px-3 py-1 rounded-full text-xs font-semibold bg-yellow-500/20 text-yellow-400 border border-yellow-400/30">
+                  DESTACADO
+                </span>
+              )}
+              {(p as any).is_active === false && (
+                <span className="inline-block px-3 py-1 rounded-full text-xs font-semibold bg-red-500/20 text-red-400 border border-red-400/30">
+                  INACTIVO
+                </span>
+              )}
+            </div>
             <h1 className="text-4xl font-secondary text-white mt-4">{p.name}</h1>
+            {(p as any).description && (
+              <p className="text-ch-gray mt-2">{(p as any).description}</p>
+            )}
             <div className="flex items-center gap-3 mt-3">
               <div className="flex items-center">
                 {[...Array(5)].map((_, i) => (
-                  <Star key={i} className={`w-5 h-5 ${i < Math.floor(Number(p.rating || 0)) ? 'text-ch-primary fill-current' : 'text-ch-gray/30'}`} />
+                  <Star key={i} className={`w-5 h-5 ${i < Math.floor(ratingValue) ? 'text-ch-primary fill-current' : 'text-ch-gray/30'}`} />
                 ))}
-                <span className="ml-2 text-white font-semibold">{Number(p.rating || 0).toFixed(1)}</span>
+                <span className="ml-2 text-white font-semibold">{ratingValue.toFixed(1)}</span>
               </div>
-              <span className="text-ch-gray">({p.reviews ?? 0} reviews)</span>
+              <span className="text-ch-gray">({reviewsCount} reviews)</span>
             </div>
           </div>
 
@@ -67,6 +103,77 @@ export default function ProductDetail() {
             )}
             <span className="text-4xl font-bold text-white">{currency(price, 'es-CO', currencyCode)}</span>
           </div>
+
+          {typeof original === 'number' && original > price && (
+            <div className="text-sm text-ch-primary">
+              Ahorra {Math.round(((original - price) / original) * 100)}%
+            </div>
+          )}
+
+          {(p.variants?.length || 0) > 1 && (
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-ch-gray text-sm">Variante</label>
+                <select
+                  className="w-full bg-ch-dark-gray border border-ch-gray/30 text-white rounded-lg p-3"
+                  value={selectedVariant?.variant_id || ''}
+                  onChange={(e) => setSelectedVariantId(e.target.value)}
+                >
+                  {(p.variants || []).map(v => (
+                    <option key={v.variant_id} value={v.variant_id}>
+                      {v.variant_label} — {currency(v.price_cents / 100, 'es-CO', v.currency || 'COP')}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {Array.from(new Set((p.variants || []).map(v => (v as any).flavor).filter(Boolean))).length > 0 && (
+                <div className="space-y-2">
+                  <div className="text-ch-gray text-sm">Sabor</div>
+                  <div className="flex flex-wrap gap-2">
+                    {Array.from(new Set((p.variants || []).map(v => (v as any).flavor).filter(Boolean))).map((fl: any) => {
+                      const match = (p.variants || []).find(v => (v as any).flavor === fl)
+                      const isSelected = (selectedVariant as any)?.flavor === fl
+                      return (
+                        <button
+                          key={String(fl)}
+                          onClick={() => match && setSelectedVariantId(match.variant_id)}
+                          className={`px-3 py-1 rounded-full border ${isSelected ? 'bg-ch-primary text-black border-ch-primary' : 'border-ch-gray/40 text-white'}`}
+                        >
+                          {String(fl)}
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {Array.from(new Set((p.variants || []).map(v => (v as any).size).filter(Boolean))).length > 0 && (
+                <div className="space-y-2">
+                  <div className="text-ch-gray text-sm">Tamaño</div>
+                  <div className="flex flex-wrap gap-2">
+                    {Array.from(new Set((p.variants || []).map(v => (v as any).size).filter(Boolean))).map((sz: any) => {
+                      const match = (p.variants || []).find(v => (v as any).size === sz)
+                      const isSelected = (selectedVariant as any)?.size === sz
+                      return (
+                        <button
+                          key={String(sz)}
+                          onClick={() => match && setSelectedVariantId(match.variant_id)}
+                          className={`px-3 py-1 rounded-full border ${isSelected ? 'bg-ch-primary text-black border-ch-primary' : 'border-ch-gray/40 text-white'}`}
+                        >
+                          {String(sz)}
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {selectedVariant?.sku && (
+                <div className="text-ch-gray text-xs">SKU: {selectedVariant.sku}</div>
+              )}
+            </div>
+          )}
 
           <p className="text-ch-gray text-lg">{p.long_description}</p>
 
@@ -79,20 +186,49 @@ export default function ProductDetail() {
           <div className="bg-ch-dark-gray rounded-lg p-6 border border-ch-gray/20">
             <h3 className="text-xl font-secondary text-white mb-4">Key Features</h3>
             <ul className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {(p.features ?? []).map((f, i) => (
+              {(((p as any).features as string[]) ?? []).map((f: string, i: number) => (
                 <li key={i} className="flex items-center text-ch-gray"><Check className="w-5 h-5 text-ch-primary mr-3"/>{f}</li>
               ))}
             </ul>
           </div>
 
+          {(((p as any).ingredients as string[]) ?? []).length > 0 && (
+            <div className="bg-ch-dark-gray rounded-lg p-6 border border-ch-gray/20">
+              <h3 className="text-xl font-secondary text-white mb-4">Ingredientes</h3>
+              <ul className="list-disc list-inside text-ch-gray">
+                {(((p as any).ingredients as string[]) ?? []).map((ing: string, i: number) => (
+                  <li key={i}>{ing}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          
+
+          {(p as any).nutrition_facts && Object.keys((p as any).nutrition_facts).length > 0 && (
+            <div className="bg-ch-dark-gray rounded-lg p-6 border border-ch-gray/20">
+              <h3 className="text-xl font-secondary text-white mb-4">Información Nutricional</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {Object.entries((p as any).nutrition_facts).map(([k, v]: any) => (
+                  <div key={k} className="flex justify-between text-ch-gray">
+                    <span className="text-white/80">{k}</span>
+                    <span>{String(v)}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           <div className="flex items-center justify-between text-sm bg-ch-dark-gray rounded-lg p-4 border border-ch-gray/20">
-            <span className="text-ch-gray">In Stock:</span>
-            <span className="text-ch-primary font-semibold">{inStock} units available</span>
+            <span className="text-ch-gray">Disponibilidad:</span>
+            <span className={`font-semibold ${inStock === 0 ? 'text-red-400' : inStock <= ((selectedVariant as any)?.low_stock_threshold || 5) ? 'text-yellow-400' : 'text-ch-primary'}`}>
+              {inStock === 0 ? 'Sin stock' : inStock <= (((selectedVariant as any)?.low_stock_threshold) || 5) ? `Pocas unidades (${inStock})` : `${inStock} unidades`}
+            </span>
           </div>
 
           <button
             onClick={() => {
-              const adapted = catalogToProduct(p)
+              const adapted = catalogToProduct(p, selectedVariant)
               const forCart: Omit<CartItem,'quantity'> = {
                 id: adapted.id,
                 variant_id: adapted.variant_id,

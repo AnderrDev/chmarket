@@ -1,200 +1,36 @@
 // src/pages/Home.tsx
 import { useMemo } from 'react'
-import { Link } from 'react-router-dom'
-import { Shield, Award, Zap, Users, ArrowRight, CheckCircle2 } from 'lucide-react'
-import Accordion, { AccordionItem } from '../components/ui/Accordion'
-import ProductCard from '../components/products/ProductCard'
+// imports de navegación/íconos locales ya se manejan en componentes
 import { pickImage } from '../utils/catalogAdapter'
 import { useCatalog } from '../hooks/useCatalog'
-import ProductCardSkeleton from '../components/products/ProductCardSkeleton'
+import { AccordionItem } from '../data/entities/ui'
+import Hero from '../components/home/Hero'
+import FeaturedProducts from '../components/home/FeaturedProducts'
+import WhyCH from '../components/home/WhyCH'
+import FAQ from '../components/home/FAQ'
+import FinalCTA from '../components/home/FinalCTA'
 
 export default function Home() {
   const { items, loading, error } = useCatalog(24)
   const top = useMemo(() => {
-    const featured = items.filter(p => (p as any).is_featured)
+    const featured = items.filter(p => (p).is_featured)
+    console.log(featured)
     return (featured.length ? featured : items).slice(0, 4)
   }, [items])
   const heroImage = useMemo(() => pickImage(items[0]?.images) || null, [items])
 
   return (
     <>
-      {/* Hero */}
-      <section id="hero" className="relative overflow-hidden">
-        <div className="absolute inset-0 pointer-events-none" aria-hidden>
-          <div className="absolute -top-32 -right-32 w-[40rem] h-[40rem] rounded-full bg-ch-primary/10 blur-3xl" />
-          <div className="absolute -bottom-32 -left-32 w-[36rem] h-[36rem] rounded-full bg-ch-primary/5 blur-3xl" />
-        </div>
-        <div className="container pt-20 pb-16">
-          <div className="grid lg:grid-cols-2 gap-10 items-center">
-            <div className="order-2 lg:order-1">
-              <h1 className="text-5xl md:text-6xl font-secondary leading-tight text-white">
-                Fuel your <span className="text-ch-primary">performance</span>
-              </h1>
-              <p className="mt-4 text-lg text-ch-gray max-w-xl">
-                Suplementos premium (creatina y proteína) diseñados para atletas que exigen resultados reales.
-              </p>
-              <div className="mt-8 flex flex-col sm:flex-row gap-4">
-                <a href="#products" className="inline-flex items-center justify-center px-6 py-3 rounded-lg bg-ch-primary text-black font-semibold hover:opacity-90">
-                  Ver productos <ArrowRight className="w-5 h-5 ml-2" />
-                </a>
-                <a href="#about" className="inline-flex items-center justify-center px-6 py-3 rounded-lg border border-ch-gray/30 text-white hover:bg-ch-light-gray">
-                  Conocer CH+
-                </a>
-              </div>
-
-              {/* Trust bar */}
-              <div className="mt-10 grid grid-cols-2 sm:grid-cols-4 gap-4">
-                <Feature icon={<Shield className="w-5 h-5" />} title="Third-party tested" />
-                <Feature icon={<Award className="w-5 h-5" />} title="Premium quality" />
-                <Feature icon={<Zap className="w-5 h-5" />} title="Fast results" />
-                <Feature icon={<Users className="w-5 h-5" />} title="Trusted by athletes" />
-              </div>
-            </div>
-
-            <div className="order-1 lg:order-2">
-              <div className="relative mx-auto max-w-lg">
-                <div className="aspect-[4/5] rounded-3xl overflow-hidden border border-ch-gray/20 bg-ch-dark-gray shadow-3xl">
-                  {heroImage ? (
-                    <img src={heroImage} alt={items[0]?.name || 'CH+'} className="w-full h-full object-cover" />
-                  ) : (
-                    <div className="w-full h-full bg-ch-medium-gray" />
-                  )}
-                </div>
-                <div className="absolute -bottom-6 -left-6 bg-ch-dark-gray/80 backdrop-blur border border-ch-gray/30 rounded-2xl p-4 text-sm text-white max-w-[220px]">
-                  <p className="font-semibold">Resultados visibles</p>
-                  <p className="text-ch-gray mt-1">Programas guiados + suplementación inteligente.</p>
-                </div>
-                <div className="absolute -top-6 -right-6 bg-ch-dark-gray/80 backdrop-blur border border-ch-gray/30 rounded-2xl p-4 text-sm text-white max-w-[220px]">
-                  <p className="font-semibold">Envíos LATAM</p>
-                  <p className="text-ch-gray mt-1">Entrega 3-7 días hábiles.</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Productos destacados */}
-      <section id="products" className="py-16">
-        <div className="container">
-          <div className="flex items-end justify-between mb-8">
-            <div>
-              <h2 className="text-3xl md:text-4xl font-secondary text-white">Productos Destacados</h2>
-              <p className="text-ch-gray mt-2">Formulados científicamente para ayudarte a alcanzar tus metas.</p>
-            </div>
-            <Link to="/products" className="hidden sm:inline-flex items-center text-ch-primary hover:underline">Ver todos</Link>
-          </div>
-
-          {loading && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              {Array.from({ length: 4 }).map((_, i) => (
-                <ProductCardSkeleton key={i} />
-              ))}
-            </div>
-          )}
-          {error && !loading && <div className="text-center text-red-400">{error}</div>}
-
-          {!loading && !error && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              {top.map(p => <ProductCard key={p.variant_id} p={p} />)}
-
-            </div>
-          )}
-
-          <div className="sm:hidden mt-6 text-center">
-            <Link to="/products" className="inline-flex items-center text-ch-primary hover:underline">Ver todos</Link>
-          </div>
-        </div>
-      </section>
-
-      {/* About / Why CH+ */}
-      <section id="about" className="py-16 bg-ch-dark-gray">
-        <div className="container">
-          <div className="grid lg:grid-cols-2 gap-10 items-center">
-            <div>
-              <h3 className="text-3xl md:text-4xl font-secondary text-white">¿Por qué elegir CH+?</h3>
-              <p className="text-ch-gray mt-4">
-                Combinamos ingredientes de máxima pureza con control de calidad de laboratorio para entregar resultados
-                consistentes. Cada lote es analizado y las fórmulas están alineadas con la evidencia científica más reciente.
-              </p>
-              <ul className="mt-6 space-y-3">
-                {['Transparencia de etiquetas', 'Dosis óptimas por porción', 'Sabor y disolución superiores', 'Soporte al cliente 7/7'].map((t, i) => (
-                  <li key={i} className="flex items-start gap-3">
-                    <CheckCircle2 className="w-5 h-5 text-ch-primary mt-0.5" />
-                    <span className="text-white">{t}</span>
-                  </li>
-                ))}
-              </ul>
-              <div className="mt-8">
-                <Link to="/products" className="inline-flex items-center px-6 py-3 rounded-lg bg-ch-primary text-black font-semibold hover:opacity-90">
-                  Comprar ahora
-                </Link>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-6">
-              <Stat number="99.9%" label="Pureza" />
-              <Stat number="50+" label="Estudios" />
-              <Stat number="15+" label="Años de I+D" />
-              <Stat number="100K+" label="Clientes" />
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* FAQ */}
-      <section id="pqrs" className="py-16">
-        <div className="container">
-          <div className="max-w-3xl mx-auto">
-            <div className="text-center mb-8">
-              <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-ch-primary/20 border border-ch-primary/30">
-                <span className="text-ch-primary font-bold">?</span>
-              </div>
-              <h3 className="mt-4 text-3xl font-secondary text-white">Preguntas frecuentes (PQRS)</h3>
-              <p className="text-ch-gray mt-2">
-                Resuelve dudas rápidas. Si no ves tu respuesta, contáctanos por WhatsApp o email.
-              </p>
-            </div>
-            <Accordion items={faqItems} />
-          </div>
-        </div>
-      </section>
-
-      {/* CTA final */}
-      <section className="py-16">
-        <div className="container">
-          <div className="rounded-2xl border border-ch-primary/30 bg-gradient-to-r from-ch-primary/10 to-transparent p-8 md:p-12 text-center">
-            <h3 className="text-3xl md:text-4xl font-secondary text-white">Potencia tu entrenamiento con CH+</h3>
-            <p className="text-ch-gray mt-2">Calidad certificada, envío rápido y atención cercana.</p>
-            <div className="mt-6">
-              <Link to="/products" className="inline-flex items-center px-6 py-3 rounded-lg bg-ch-primary text-black font-semibold hover:opacity-90">
-                Explorar catálogo
-              </Link>
-            </div>
-          </div>
-        </div>
-      </section>
+      <Hero imageUrl={heroImage} altText={items[0]?.name || 'CH+'} />
+      <FeaturedProducts products={top} loading={loading} error={error} />
+      <WhyCH />
+      <FAQ items={faqItems} />
+      <FinalCTA />
     </>
   )
 }
 
-function Feature({ icon, title }: { icon: React.ReactNode; title: string }) {
-  return (
-    <div className="flex items-center gap-2 text-ch-gray/90">
-      <span className="text-ch-primary">{icon}</span>
-      <span className="text-sm">{title}</span>
-    </div>
-  )
-}
-
-function Stat({ number, label }: { number: string; label: string }) {
-  return (
-    <div className="rounded-2xl bg-ch-black border border-ch-gray/20 p-6 text-center">
-      <div className="text-3xl font-secondary text-ch-primary">{number}</div>
-      <div className="text-ch-gray mt-1">{label}</div>
-    </div>
-  )
-}
+// componentes locales movidos a `src/components/home/*`
 
   // pickImage centralizado en utils/catalogAdapter
 

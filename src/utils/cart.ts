@@ -1,4 +1,4 @@
-export type Keyable = { variant_id?: string; id?: number }
+import type { Keyable } from "../data/entities/cart"
 
 /**
  * Genera la clave estable de un ítem del carrito:

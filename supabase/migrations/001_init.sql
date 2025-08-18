@@ -41,13 +41,13 @@ create table if not exists products (
   features text[] default '{}',
   ingredients text[] default '{}',
   nutrition_facts jsonb default '{}'::jsonb,
-  images jsonb,                           -- <== CORRECTO para seeds y front
+  images jsonb,                           -- arreglo de URLs u objetos
   price_cents integer not null,           -- precio base opcional (UI/promos)
   compare_at_price_cents integer,
   currency text not null default 'COP' check (currency = 'COP'),
   rating_avg numeric default 0,
   reviews_count integer default 0,
-  is_featured boolean default false,      -- <== DESTACADOS
+  is_featured boolean default false,      -- destacados
   is_active boolean default true,
   created_at timestamptz default now(),
   updated_at timestamptz default now()
@@ -61,7 +61,7 @@ create table if not exists product_variants (
   flavor text,
   size text,
   price_cents integer not null,
-  compare_at_price_cents integer,         -- <== PRECIO DE COMPARACIÓN (tachado)
+  compare_at_price_cents integer,
   currency text not null default 'COP' check (currency = 'COP'),
   in_stock integer not null default 0,
   low_stock_threshold integer default 5,
@@ -78,7 +78,6 @@ create index if not exists idx_variants_sku on product_variants(sku);
 
 -- =========================================
 -- TABLAS: ORDERS & ORDER ITEMS
--- (pago embebido en orders si luego lo quieres usar)
 -- =========================================
 create table if not exists orders (
   id uuid primary key default gen_random_uuid(),
@@ -94,7 +93,7 @@ create table if not exists orders (
   shipping_address jsonb,
   billing_address jsonb,
 
-  -- Campos de pago embebidos (opcional)
+  -- pago embebido (opcional)
   payment_provider text default 'MERCADO_PAGO',
   payment_status payment_status default 'PENDING',
   payment_preference_id text,
@@ -213,12 +212,13 @@ begin
 end $$;
 
 -- =========================================
--- VISTA PÚBLICA DE CATÁLOGO (security barrier)
+-- VISTA UNIFICADA: catalog (una fila por producto)
 -- =========================================
-create or replace view catalog_public
-as
+drop view if exists catalog cascade;
+
+create or replace view catalog as
 select
-  p.id                  as product_id,
+  p.id                as product_id,
   p.slug,
   p.name,
   p.type,
@@ -226,16 +226,35 @@ select
   p.long_description,
   p.images,
   p.is_featured,
-  v.id                  as variant_id,
-  v.label               as variant_label,
-  v.price_cents,
-  v.compare_at_price_cents,
-  v.currency,
-  v.in_stock            as stock,
-  v.is_active           as variant_active
+  p.is_active,
+
+  jsonb_agg(
+    jsonb_build_object(
+      'variant_id', v.id,
+      'variant_label', v.label,
+      'sku', v.sku,
+      'price_cents', v.price_cents,
+      'compare_at_price_cents', v.compare_at_price_cents,
+      'currency', v.currency,
+      'stock', v.in_stock,
+      'is_active', v.is_active
+    )
+    order by v.price_cents asc, v.label asc
+  ) filter (where v.id is not null)                                           as variants,
+
+  min(v.price_cents) filter (where v.id is not null)                          as min_price_cents,
+  min(v.compare_at_price_cents) filter (where v.compare_at_price_cents is not null) as min_compare_at_price_cents,
+
+  array_agg(v.id) filter (where v.id is not null)                             as variant_ids
+
 from products p
-join product_variants v on v.product_id = p.id and v.is_active = true
-where p.is_active = true;
+left join product_variants v
+  on v.product_id = p.id
+ and v.is_active = true
+where p.is_active = true
+group by
+  p.id, p.slug, p.name, p.type, p.description, p.long_description,
+  p.images, p.is_featured, p.is_active;
 
 -- =========================================
 -- RLS: activar y políticas mínimas/seguras
@@ -261,7 +280,6 @@ create policy "public read discount_codes" on discount_codes
 for select using (is_active = true and (end_at is null or end_at > now()));
 
 -- Órdenes e items: SOLO service_role (Edge Functions) puede operar
--- (más seguro: el cliente no puede crear/leer órdenes directamente)
 drop policy if exists "svc all orders" on orders;
 create policy "svc all orders" on orders
 for all using (auth.role() = 'service_role')

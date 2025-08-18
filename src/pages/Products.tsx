@@ -27,7 +27,7 @@ export default function Products() {
 
         {!loading && !error && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {items.map(p => <ProductCard key={p.variant_id} p={p} />)}
+            {items.map(p => <ProductCard key={p.product_id} p={p} />)}
           </div>
         )}
       </div>

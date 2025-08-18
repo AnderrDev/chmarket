@@ -1,16 +1,10 @@
 import { useEffect, useState } from 'react'
 import { listProductsUseCase } from '../container'
-import type { CatalogProduct } from '../data/entities/catalog'
-
-export type UseCatalogResult = {
-  items: CatalogProduct[]
-  loading: boolean
-  error: string | null
-  reload: () => void
-}
+import type { CatalogViewRow } from '../data/entities/catalog'
+import type { UseCatalogResult } from '../data/entities/ui'
 
 export function useCatalog(limit = 24): UseCatalogResult {
-  const [items, setItems] = useState<CatalogProduct[]>([])
+  const [items, setItems] = useState<CatalogViewRow[]>([])
   const [loading, setLoading] = useState<boolean>(true)
   const [error, setError] = useState<string | null>(null)
   const [version, setVersion] = useState<number>(0)
@@ -21,6 +15,8 @@ export function useCatalog(limit = 24): UseCatalogResult {
       try {
         setLoading(true)
         const data = await listProductsUseCase.execute(limit)
+        console.log(data);
+        
         if (mounted) {
           setItems(data)
           setError(null)

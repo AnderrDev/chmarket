@@ -1,12 +1,6 @@
 import { ChevronDown } from 'lucide-react';
 import { useState } from 'react';
-
-export type AccordionItem = {
-  id: string;
-  question: string;
-  answer: string;
-  defaultOpen?: boolean;
-};
+import type { AccordionItem } from '../../data/entities/ui';
 
 export default function Accordion({ items }: { items: AccordionItem[] }) {
   return (

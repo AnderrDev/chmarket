@@ -1,18 +1,5 @@
 // src/services/mp.ts
-/**
- * Payload esperado por la Edge Function `create-preference`.
- * - `couponCode` coincide con el nombre del campo que la función espera.
- */
-export type PreferencePayload = {
-  items: { variant_id: string; quantity: number }[];
-  currency?: string; // "COP"
-  // La Edge Function espera email en el nivel raíz
-  email: string;
-  // Datos opcionales si extiendes la función
-  shippingAddress?: Record<string, unknown>;
-  billingAddress?: Record<string, unknown>;
-  couponCode?: string | null; // 👈 nombre exacto que espera tu Edge Function
-};
+import type { PreferencePayload } from "../data/entities/order"
 
 // Detecta el endpoint de Functions:
 // - En local puedes usar un proxy /api si lo tienes

@@ -1,4 +1,4 @@
-import { useParams, useSearchParams } from 'react-router-dom'
+import { Link, useParams, useSearchParams } from 'react-router-dom'
 import { useEffect, useMemo, useState } from 'react'
 import { Check, Heart, Share2, Star, Truck, RotateCcw, Shield } from 'lucide-react'
 import { useCart } from '../context/CartContext'
@@ -9,12 +9,15 @@ import useProductBySlug from '../hooks/useProductBySlug'
 import ProductGallery from '../components/products/ProductGallery'
 import ProductDetailSkeleton from '../components/products/ProductDetailSkeleton'
 import BackButton from '../components/common/BackButton'
-
+import ProductCard from '../components/products/ProductCard'
+import { useCatalog } from '../hooks/useCatalog'
+import { useToast } from '../context/ToastContext'
 
 export default function ProductDetail() {
   const { slug } = useParams()
   const [searchParams, setSearchParams] = useSearchParams()
   const { add } = useCart()
+  const { showToast } = useToast()
   const [fav, setFav] = useState(false)
   const { product: p, loading } = useProductBySlug(slug)
 
@@ -249,6 +252,7 @@ export default function ProductDetail() {
                 servings: adapted.servings,
               }
               add(forCart)
+              showToast('Producto agregado al carrito', { type: 'success' })
             }}
             disabled={inStock === 0}
             className="w-full bg-ch-primary text-black py-4 rounded-lg text-lg font-semibold hover:opacity-90 disabled:opacity-50"
@@ -257,6 +261,9 @@ export default function ProductDetail() {
           </button>
         </div>
       </div>
+
+      {/* Recomendados */}
+      <RecommendedProducts currentSlug={p.slug} currentType={(p as any).type} />
     </div>
   )
 }
@@ -268,5 +275,29 @@ function InfoCard({ icon, title, subtitle }: { icon: React.ReactNode; title: str
       <h3 className="text-white">{title}</h3>
       <p className="text-ch-gray text-sm">{subtitle}</p>
     </div>
+  )
+}
+
+function RecommendedProducts({ currentSlug, currentType }: { currentSlug: string; currentType?: string }) {
+  const { items } = useCatalog(24)
+  const recommended = (items || [])
+    .filter(it => it.slug !== currentSlug)
+    .filter(it => (currentType ? it.type === currentType : true))
+    .slice(0, 4)
+
+  if (recommended.length === 0) return null
+
+  return (
+    <section className="mt-16">
+      <h3 className="text-2xl font-secondary text-white mb-6">Productos recomendados</h3>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        {recommended.map(p => (
+          <ProductCard key={p.product_id} p={p} />
+        ))}
+      </div>
+      <div className="mt-6">
+        <Link to="/products" className="text-ch-primary hover:underline">Ver todos los productos</Link>
+      </div>
+    </section>
   )
 }

@@ -4,7 +4,7 @@ import type { AccordionItem } from '../../data/entities/ui';
 
 export default function Accordion({ items }: { items: AccordionItem[] }) {
   return (
-    <div className="divide-y divide-ch-gray/20 rounded-2xl border border-ch-gray/20 bg-ch-dark-gray">
+    <div className="divide-y divide-ch-gray/20 rounded-2xl border border-ch-gray/20 bg-ch-dark-gray overflow-hidden">
       {items.map((it) => (
         <Row key={it.id} item={it} />
       ))}
@@ -18,7 +18,7 @@ function Row({ item }: { item: AccordionItem }) {
     <div>
       <button
         onClick={() => setOpen((v) => !v)}
-        className="w-full px-6 py-5 text-left flex items-center justify-between hover:bg-ch-medium-gray transition"
+        className="w-full px-6 py-5 text-left flex items-center justify-between hover:bg-ch-medium-gray transition border border-transparent hover:border-ch-gray/30 rounded-xl focus:outline-none focus:ring-2 focus:ring-ch-primary/40"
         aria-expanded={open}
         aria-controls={`panel-${item.id}`}
       >

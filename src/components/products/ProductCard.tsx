@@ -1,4 +1,4 @@
-import { Check, Heart, Star } from 'lucide-react'
+import { Check, Heart } from 'lucide-react'
 import { useState } from 'react'
 import { useCart } from '../../context/CartContext'
 import { CatalogViewRow, CatalogViewVariant } from '../../data/entities/catalog'
@@ -6,10 +6,12 @@ import type { CartItem } from '../../data/entities/cart'
 import { pickImage } from '../../utils/catalogAdapter'
 import { currency } from '../../utils/format'
 import { Link } from 'react-router-dom'
+import { useToast } from '../../context/ToastContext'
 
 
 export default function ProductCard({ p }: { p: CatalogViewRow }) {
   const { add } = useCart()
+  const { showToast } = useToast()
   const [fav, setFav] = useState(false)
 
   const img = pickImage(p.images)
@@ -66,8 +68,15 @@ export default function ProductCard({ p }: { p: CatalogViewRow }) {
         </span>
 
         <div className="mt-3 text-xl font-secondary text-white">{p.name}</div>
-        {defaultVariant && (
-          <div className="text-ch-gray text-sm mt-1">{defaultVariant.variant_label}</div>
+        {p.variants && p.variants.length > 0 && (
+          <div className="text-ch-gray text-sm mt-1">
+            {p.variants.map((variant, index) => (
+              <span key={variant.variant_id}>
+                {variant.variant_label}
+                {index < p.variants!.length - 1 && ', '}
+              </span>
+            ))}
+          </div>
         )}
         {p.description && <p className="text-ch-gray text-sm mt-2 line-clamp-2">{p.description}</p>}
 
@@ -93,10 +102,10 @@ export default function ProductCard({ p }: { p: CatalogViewRow }) {
               {currency((defaultVariant?.price_cents || 0) / 100, 'es-CO', defaultVariant?.currency || 'COP')}
             </span>
           </div>
-          <div className="flex items-center gap-1 text-sm text-white">
+          {/* <div className="flex items-center gap-1 text-sm text-white">
             <Star className="w-4 h-4 text-ch-primary fill-current" />
             <span>{(p.rating ?? 4.8).toFixed(1)}</span>
-          </div>
+          </div> */}
         </div>
 
         <div className="space-y-3">
@@ -107,7 +116,10 @@ export default function ProductCard({ p }: { p: CatalogViewRow }) {
             Ver detalles
           </Link>
           <button
-            onClick={() => add(productForCart)}
+            onClick={() => {
+              add(productForCart)
+              showToast('Producto agregado al carrito', { type: 'success' })
+            }}
             disabled={!canBuy}
             className="w-full bg-ch-primary text-black font-semibold py-3 rounded-lg hover:opacity-90 disabled:opacity-50"
           >

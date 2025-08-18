@@ -1,4 +1,5 @@
 import type { CatalogViewRow } from './catalog'
+import type { ReactNode } from 'react'
 
 export type UseCatalogResult = {
   items: CatalogViewRow[]
@@ -10,7 +11,7 @@ export type UseCatalogResult = {
 export type AccordionItem = {
   id: string
   question: string
-  answer: string
+  answer: ReactNode
   defaultOpen?: boolean
 }
 

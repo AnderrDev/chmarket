@@ -2,7 +2,12 @@ import type { AdminProduct } from '../entities/admin'
 
 export interface AdminProductsDataSource {
   list(): Promise<{ items: AdminProduct[] }>
-  upsert(payload: { product: Partial<AdminProduct> & { slug: string; name: string; type: 'creatine' | 'protein' }, variants: Array<Partial<AdminProduct['variants'][number]> & { sku: string; label: string; price_cents: number; in_stock: number }> }): Promise<{ ok: boolean; product_id: string }>
+  upsert(payload: {
+    product: Partial<AdminProduct> & { slug: string; name: string; type: 'creatine' | 'protein' },
+    variants: Array<Partial<AdminProduct['variants'][number]> & { sku: string; label: string; price_cents: number; in_stock: number }>,
+    default_stock?: number,
+    default_label?: string,
+  }): Promise<{ ok: boolean; product_id: string }>
   remove(id: string): Promise<{ ok: boolean }>
 }
 
@@ -24,8 +29,16 @@ async function http<T = any>(path: string, init?: RequestInit): Promise<T> {
   }
   const res = await fetch(url, { ...init, headers: { ...headers, ...(init?.headers || {}) } })
   if (!res.ok) {
-    let msg = 'Error de servidor'
-    try { const j = await res.json(); msg = j?.error || msg } catch {}
+    let msg: string = 'Error de servidor'
+    try {
+      const j: any = await res.json()
+      if (j?.error) {
+        if (typeof j.error === 'string') msg = j.error
+        else if (typeof j.error?.message === 'string') msg = j.error.message
+        else msg = JSON.stringify(j.error)
+        if (j?.sku && typeof j.sku === 'string') msg += `: ${j.sku}`
+      }
+    } catch {}
     throw new Error(msg)
   }
   return res.json() as Promise<T>
@@ -36,7 +49,7 @@ export class FunctionsAdminProductsDataSource implements AdminProductsDataSource
     return http('/admin-products')
   }
 
-  async upsert(payload: { product: Partial<AdminProduct> & { slug: string; name: string; type: 'creatine' | 'protein' }, variants: Array<Partial<AdminProduct['variants'][number]> & { sku: string; label: string; price_cents: number; in_stock: number }> }): Promise<{ ok: boolean; product_id: string }> {
+  async upsert(payload: { product: Partial<AdminProduct> & { slug: string; name: string; type: 'creatine' | 'protein' }, variants: Array<Partial<AdminProduct['variants'][number]> & { sku: string; label: string; price_cents: number; in_stock: number }>, default_stock?: number, default_label?: string }): Promise<{ ok: boolean; product_id: string }> {
     return http('/admin-products', { method: 'POST', body: JSON.stringify(payload) })
   }
 

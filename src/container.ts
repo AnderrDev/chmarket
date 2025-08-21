@@ -18,6 +18,23 @@ import { FunctionsAdminMediaDataSource } from './data/datasources/AdminMediaData
 import { UploadProductImageUseCase } from './domain/usecases/admin/UploadProductImage'
 import { SupabaseAdminValidationDataSource } from './data/datasources/AdminValidationDataSource'
 import { ValidateUniquenessUseCase } from './domain/usecases/admin/ValidateUniqueness'
+import { FunctionsAdminOrdersDataSource } from './data/datasources/AdminOrdersDataSource'
+import { AdminOrderRepositoryImpl } from './data/repositories/AdminOrderRepositoryImpl'
+import { ListAdminOrdersUseCase } from './domain/usecases/orders/ListAdminOrders'
+import { GetAdminOrderUseCase } from './domain/usecases/orders/GetAdminOrder'
+import { UpdateAdminOrderStatusUseCase } from './domain/usecases/orders/UpdateAdminOrderStatus'
+import { FunctionsAdminCustomersDataSource } from './data/datasources/AdminCustomersDataSource'
+import { AdminCustomerRepositoryImpl } from './data/repositories/AdminCustomerRepositoryImpl'
+import { ListAdminCustomersUseCase } from './domain/usecases/orders/ListAdminCustomers'
+import { GetAdminCustomerUseCase } from './domain/usecases/orders/GetAdminCustomer'
+import { FunctionsAdminContentDataSource } from './data/datasources/AdminContentDataSource'
+import { AdminContentRepositoryImpl } from './data/repositories/AdminContentRepositoryImpl'
+import { GetContentBlockUseCase } from './domain/usecases/admin/GetContentBlock'
+import { SetContentBlockUseCase } from './domain/usecases/admin/SetContentBlock'
+import { FunctionsAdminSettingsDataSource } from './data/datasources/AdminSettingsDataSource'
+import { AdminSettingsRepositoryImpl } from './data/repositories/AdminSettingsRepositoryImpl'
+import { GetSettingUseCase } from './domain/usecases/admin/GetSetting'
+import { SetSettingUseCase } from './domain/usecases/admin/SetSetting'
 
 // Contenedor simple para inyectar dependencias (puede evolucionar a DI lib)
 const catalogDs = new SupabaseCatalogDataSource()
@@ -47,5 +64,30 @@ const adminMediaDs = new FunctionsAdminMediaDataSource()
 export const uploadProductImageUseCase = new UploadProductImageUseCase(adminMediaDs)
 const adminValidationDs = new SupabaseAdminValidationDataSource()
 export const validateUniquenessUseCase = new ValidateUniquenessUseCase(adminValidationDs)
+
+// Admin - Orders
+const adminOrdersDs = new FunctionsAdminOrdersDataSource()
+const adminOrdersRepo = new AdminOrderRepositoryImpl(adminOrdersDs)
+export const listAdminOrdersUseCase = new ListAdminOrdersUseCase(adminOrdersRepo)
+export const getAdminOrderUseCase = new GetAdminOrderUseCase(adminOrdersRepo)
+export const updateAdminOrderStatusUseCase = new UpdateAdminOrderStatusUseCase(adminOrdersRepo)
+
+// Admin - Customers
+const adminCustomersDs = new FunctionsAdminCustomersDataSource()
+const adminCustomersRepo = new AdminCustomerRepositoryImpl(adminCustomersDs)
+export const listAdminCustomersUseCase = new ListAdminCustomersUseCase(adminCustomersRepo)
+export const getAdminCustomerUseCase = new GetAdminCustomerUseCase(adminCustomersRepo)
+
+// Admin - Content
+const adminContentDs = new FunctionsAdminContentDataSource()
+const adminContentRepo = new AdminContentRepositoryImpl(adminContentDs)
+export const getContentBlockUseCase = new GetContentBlockUseCase(adminContentRepo)
+export const setContentBlockUseCase = new SetContentBlockUseCase(adminContentRepo)
+
+// Admin - Settings
+const adminSettingsDs = new FunctionsAdminSettingsDataSource()
+const adminSettingsRepo = new AdminSettingsRepositoryImpl(adminSettingsDs)
+export const getSettingUseCase = new GetSettingUseCase(adminSettingsRepo)
+export const setSettingUseCase = new SetSettingUseCase(adminSettingsRepo)
 
 

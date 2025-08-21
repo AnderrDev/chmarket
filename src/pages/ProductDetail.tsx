@@ -24,8 +24,10 @@ export default function ProductDetail() {
   const initialVariant = useMemo(() => (p?.variants || []).find(v => v.is_active) || (p?.variants || [])[0], [p])
   const [selectedVariantId, setSelectedVariantId] = useState<string | undefined>(initialVariant?.variant_id)
   const selectedVariant = useMemo(() => (p?.variants || []).find(v => v.variant_id === selectedVariantId) || initialVariant, [p, selectedVariantId, initialVariant])
-  const price = (selectedVariant?.price_cents || 0) / 100
-  const original = typeof selectedVariant?.compare_at_price_cents === 'number' ? (selectedVariant!.compare_at_price_cents as number) / 100 : undefined
+  const fallbackMinPrice = (p?.min_price_cents || 0) / 100
+  const fallbackMinCompare = typeof (p as any)?.min_compare_at_price_cents === 'number' ? ((p as any).min_compare_at_price_cents as number) / 100 : undefined
+  const price = typeof selectedVariant?.price_cents === 'number' ? (selectedVariant!.price_cents as number) / 100 : fallbackMinPrice
+  const original = typeof selectedVariant?.compare_at_price_cents === 'number' ? (selectedVariant!.compare_at_price_cents as number) / 100 : fallbackMinCompare
   const currencyCode = selectedVariant?.currency || 'COP'
   const inStock = selectedVariant?.stock ?? 0
   const ratingValue = Number(((p as any)?.rating ?? (p as any)?.rating_avg ?? 0))

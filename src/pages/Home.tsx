@@ -1,5 +1,6 @@
 // src/pages/Home.tsx
 import { useMemo } from 'react'
+import { useContentBlock } from '../hooks/useContentBlock'
 // imports de navegación/íconos locales ya se manejan en componentes
 import { pickImage } from '../utils/catalogAdapter'
 import { useCatalog } from '../hooks/useCatalog'
@@ -12,19 +13,21 @@ import FinalCTA from '../components/home/FinalCTA'
 
 export default function Home() {
   const { items, loading, error } = useCatalog(24)
+  const heroBlock = useContentBlock<{ title?: string; text?: string; imageUrl?: string }>('home:hero')
+  const faqsBlock = useContentBlock<{ items?: Array<{ q: string; a: string }> }>('home:faqs')
   const top = useMemo(() => {
     const featured = items.filter(p => (p).is_featured)
     console.log(featured)
     return (featured.length ? featured : items).slice(0, 4)
   }, [items])
-  const heroImage = useMemo(() => pickImage(items[0]?.images) || null, [items])
+  const heroImage = useMemo(() => heroBlock.data?.imageUrl || pickImage(items[0]?.images) || null, [heroBlock.data, items])
 
   return (
     <>
-      <Hero imageUrl={heroImage} altText={items[0]?.name || 'CH+'} />
+      <Hero imageUrl={heroImage} altText={items[0]?.name || 'CH+'} title={heroBlock.data?.title} text={heroBlock.data?.text} />
       <FeaturedProducts products={top} loading={loading} error={error} />
       <WhyCH />
-      <FAQ items={faqItems} />
+      <FAQ items={(faqsBlock.data?.items || []).map((it, idx) => ({ id: String(idx), question: it.q, answer: it.a }))} />
       <FinalCTA />
     </>
   )

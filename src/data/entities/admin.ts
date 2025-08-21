@@ -17,6 +17,9 @@ export type AdminProduct = {
   type: 'creatine' | 'protein'
   description?: string | null
   long_description?: string | null
+  features?: string[]
+  ingredients?: string[]
+  nutrition_facts?: Record<string, any>
   images?: any
   is_active: boolean
   is_featured: boolean

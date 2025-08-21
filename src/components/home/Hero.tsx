@@ -3,9 +3,11 @@ import { Shield, Award, Zap, Users, ArrowRight } from 'lucide-react'
 type HeroProps = {
   imageUrl: string | null
   altText?: string
+  title?: string
+  text?: string
 }
 
-export default function Hero({ imageUrl, altText = 'CH+' }: HeroProps) {
+export default function Hero({ imageUrl, altText = 'CH+', title, text }: HeroProps) {
   return (
     <section id="hero" className="relative overflow-hidden">
       <div className="absolute inset-0 pointer-events-none" aria-hidden>
@@ -16,10 +18,12 @@ export default function Hero({ imageUrl, altText = 'CH+' }: HeroProps) {
         <div className="grid lg:grid-cols-2 gap-10 items-center">
           <div className="order-2 lg:order-1">
             <h1 className="text-5xl md:text-6xl font-secondary leading-tight text-white">
-              Fuel your <span className="text-ch-primary">performance</span>
+              {title || (<>
+                Fuel your <span className="text-ch-primary">performance</span>
+              </>)}
             </h1>
             <p className="mt-4 text-lg text-ch-gray max-w-xl">
-              Suplementos premium (creatina y proteína) diseñados para atletas que exigen resultados reales.
+              {text || 'Suplementos premium (creatina y proteína) diseñados para atletas que exigen resultados reales.'}
             </p>
             <div className="mt-8 flex flex-col sm:flex-row gap-4">
               <a href="#products" className="inline-flex items-center justify-center px-6 py-3 rounded-lg bg-ch-primary text-black font-semibold hover:opacity-90">

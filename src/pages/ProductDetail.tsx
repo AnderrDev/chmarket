@@ -1,4 +1,4 @@
-import { Link, useParams, useSearchParams } from 'react-router-dom'
+import { useParams, useSearchParams } from 'react-router-dom'
 import { useEffect, useMemo, useState } from 'react'
 import { Check, Heart, Share2, Star, Truck, RotateCcw, Shield } from 'lucide-react'
 import { useCart } from '../context/CartContext'
@@ -12,7 +12,6 @@ import BackButton from '../components/common/BackButton'
 import ProductCarousel from '../components/ui/ProductCarousel'
 import { useCatalog } from '../hooks/useCatalog'
 import { useToast } from '../context/ToastContext'
-import SectionDivider from '../components/ui/SectionDivider'
 
 export default function ProductDetail() {
   const { slug } = useParams()

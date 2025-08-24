@@ -298,7 +298,7 @@ export default function ProductCarousel({
             {loading ? (
               <CarouselSkeleton />
             ) : (
-              products.map((product, index) => (
+              products.map((product) => (
                 <div 
                   key={product.product_id} 
                   className="flex-shrink-0 w-48 sm:w-56 md:w-64"

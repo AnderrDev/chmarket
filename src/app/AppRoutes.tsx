@@ -5,6 +5,7 @@ import { Route, Routes, useLocation } from 'react-router-dom'
 import { useEffect } from 'react'
 import Footer from '../components/layout/Footer'
 import Header from '../components/layout/Header'
+import WhatsAppButton from '../components/ui/WhatsAppButton'
 import Checkout from '../pages/Checkout'
 import Confirmation from '../pages/Confirmation'
 import Processing from '../pages/Processing'
@@ -12,7 +13,6 @@ import ProductDetail from '../pages/ProductDetail'
 import Products from '../pages/Products'
 import Home from '../pages/Home'
 import Payment from '../pages/Payment'
-
 
 export default function AppRoutes() {
   const location = useLocation()
@@ -40,6 +40,7 @@ export default function AppRoutes() {
         </Routes>
       </main>
       <Footer />
+      <WhatsAppButton />
     </div>
   )
 }

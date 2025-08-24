@@ -12,6 +12,7 @@ import BackButton from '../components/common/BackButton'
 import ProductCarousel from '../components/ui/ProductCarousel'
 import { useCatalog } from '../hooks/useCatalog'
 import { useToast } from '../context/ToastContext'
+import SectionDivider from '../components/ui/SectionDivider'
 
 export default function ProductDetail() {
   const { slug } = useParams()

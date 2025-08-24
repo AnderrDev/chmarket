@@ -4,7 +4,7 @@ import type { AccordionItem } from '../../data/entities/ui';
 
 export default function Accordion({ items }: { items: AccordionItem[] }) {
   return (
-    <div className="divide-y divide-ch-gray/20 rounded-2xl border border-ch-gray/20 bg-ch-dark-gray overflow-hidden">
+    <div className="space-y-4">
       {items.map((it) => (
         <Row key={it.id} item={it} />
       ))}
@@ -14,26 +14,36 @@ export default function Accordion({ items }: { items: AccordionItem[] }) {
 
 function Row({ item }: { item: AccordionItem }) {
   const [open, setOpen] = useState(!!item.defaultOpen);
+  
   return (
-    <div>
+    <div className="group">
       <button
         onClick={() => setOpen((v) => !v)}
-        className="w-full px-6 py-5 text-left flex items-center justify-between hover:bg-ch-medium-gray transition border border-transparent hover:border-ch-gray/30 rounded-xl focus:outline-none focus:ring-2 focus:ring-ch-primary/40"
+        className="w-full px-6 py-5 text-left flex items-center justify-between bg-ch-dark-gray hover:bg-ch-medium-gray transition-all duration-300 border border-ch-gray/20 hover:border-ch-primary/30 rounded-xl focus:outline-none focus:ring-2 focus:ring-ch-primary/40 shadow-sm hover:shadow-md"
         aria-expanded={open}
         aria-controls={`panel-${item.id}`}
       >
-        <span className="text-white font-medium">{item.question}</span>
+        <span className="text-white font-medium text-left pr-4 group-hover:text-ch-primary transition-colors duration-300">
+          {item.question}
+        </span>
         <ChevronDown
-          className={`w-5 h-5 text-ch-primary transition-transform ${open ? 'rotate-180' : ''}`}
+          className={`w-5 h-5 text-ch-primary transition-all duration-300 flex-shrink-0 ${
+            open ? 'rotate-180 scale-110' : 'rotate-0 scale-100'
+          }`}
         />
       </button>
+      
       <div
         id={`panel-${item.id}`}
-        className={`px-6 py-6 text-ch-gray text-sm ${open ? 'block' : 'hidden'}`}
+        className={`overflow-hidden transition-all duration-500 ease-in-out ${
+          open ? 'max-h-96 opacity-100 mt-2' : 'max-h-0 opacity-0'
+        }`}
         role="region"
         aria-labelledby={`button-${item.id}`}
       >
-        {item.answer}
+        <div className="px-6 py-4 bg-ch-dark-gray/50 border border-ch-gray/10 rounded-lg text-ch-gray text-sm leading-relaxed">
+          {item.answer}
+        </div>
       </div>
     </div>
   );

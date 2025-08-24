@@ -9,7 +9,21 @@ export default {
     container: {
       center: true,
       padding: '1rem',
-      screens: { sm: '640px', md: '768px', lg: '1024px', xl: '1280px', '2xl': '1440px' },
+      screens: { 
+        sm: '640px', 
+        md: '768px', 
+        lg: '1024px', 
+        xl: '1280px', 
+        '2xl': '1440px' 
+      },
+      maxWidth: {
+        DEFAULT: '1200px',
+        sm: '640px',
+        md: '768px',
+        lg: '1024px',
+        xl: '1200px',
+        '2xl': '1200px',
+      },
     },
     extend: {
       colors: {

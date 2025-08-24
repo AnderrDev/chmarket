@@ -31,7 +31,7 @@ export default function Header() {
           {/* Navbar desktop */}
           <nav className="hidden md:flex items-center gap-6 text-sm">
             <a href={to('hero')} className="text-ch-gray hover:text-white">Inicio</a>
-            <Link to="/products" className="text-ch-gray hover:text-white">Productos</Link>
+            <a href={to('products')} className="text-ch-gray hover:text-white">Productos</a>
             <a href={to('about')} className="text-ch-gray hover:text-white">Nosotros</a>
             <a href={to('pqrs')} className="text-ch-gray hover:text-white">PQRS</a>
 
@@ -68,7 +68,7 @@ export default function Header() {
         <div className="md:hidden border-t border-ch-gray/20 bg-ch-dark-gray">
           <nav className="container py-3 flex flex-col gap-3 text-sm">
             <a href={to('hero')} className="text-ch-gray hover:text-white" onClick={() => setOpenMobile(false)}>Inicio</a>
-            <Link to="/products" className="text-ch-gray hover:text-white" onClick={() => setOpenMobile(false)}>Productos</Link>
+            <a href={to('products')} className="text-ch-gray hover:text-white" onClick={() => setOpenMobile(false)}>Productos</a>
             <a href={to('about')} className="text-ch-gray hover:text-white" onClick={() => setOpenMobile(false)}>Nosotros</a>
             <a href={to('pqrs')} className="text-ch-gray hover:text-white" onClick={() => setOpenMobile(false)}>PQRS</a>
           </nav>

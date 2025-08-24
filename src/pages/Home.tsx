@@ -1,7 +1,6 @@
 // src/pages/Home.tsx
 import { useMemo } from 'react'
 // imports de navegación/íconos locales ya se manejan en componentes
-import { pickImage } from '../utils/catalogAdapter'
 import { useCatalog } from '../hooks/useCatalog'
 import { AccordionItem } from '../data/entities/ui'
 import Hero from '../components/home/Hero'
@@ -9,6 +8,7 @@ import FeaturedProducts from '../components/home/FeaturedProducts'
 import WhyCH from '../components/home/WhyCH'
 import FAQ from '../components/home/FAQ'
 import FinalCTA from '../components/home/FinalCTA'
+import SectionDivider from '../components/ui/SectionDivider'
 
 export default function Home() {
   const { items, loading, error } = useCatalog(24)
@@ -24,9 +24,13 @@ export default function Home() {
   return (
     <>
       <Hero imageUrl={heroImage} altText={items[0]?.name || 'CH+'} />
+      <SectionDivider variant="gradient" />
       <FeaturedProducts products={top} loading={loading} error={error} />
+      <SectionDivider variant="gradient" />
       <WhyCH />
+      <SectionDivider variant="gradient" />
       <FAQ items={faqItems} />
+      <SectionDivider variant="gradient" />
       <FinalCTA />
     </>
   )
@@ -39,33 +43,27 @@ export default function Home() {
 const faqItems: AccordionItem[] = [
   {
     id: 'envio',
-    question: '¿Tiempos y costo de envío?',
+    question: '¿Cuánto cuesta el envío y cuánto tarda?',
     answer:
-      'Enviamos a la mayoría de países de LATAM. Los tiempos típicos son 3–7 días hábiles. Envío gratis por sobre el umbral configurado.',
+      'Envío gratis por compras superiores a $150.000. Para compras menores, el costo es de $15.000. Los envíos llegan en 2-4 días hábiles a las principales ciudades y 3-6 días al resto del país.',
     defaultOpen: true,
   },
   {
     id: 'creatina',
-    question: '¿Cómo tomar la creatina CH+?',
+    question: '¿Cómo debo tomar la creatina?',
     answer:
-      '5g al día, todos los días (entrenes o no). Puedes tomarla post-entreno con agua o junto a carbohidratos para mejorar la absorción.',
+      'Toma 5g de creatina todos los días, sin importar si entrenas o no. Puedes tomarla con agua, jugo o en tu batido de proteína. Para mejorar la absorción, tómala con carbohidratos. Los resultados se ven después de 2-4 semanas de uso consistente.',
   },
   {
     id: 'proteina',
     question: '¿La proteína tiene lactosa?',
     answer:
-      'La Whey Isolate CH+ es baja en lactosa gracias al proceso de filtrado. Si eres muy sensible, empieza con 1/2 scoop y evalúa tolerancia.',
+      'Nuestra Whey Isolate es baja en lactosa (menos del 1%) gracias al proceso de microfiltración. Si eres intolerante a la lactosa, empieza con media porción y evalúa tu tolerancia. También ofrecemos opciones veganas sin lactosa.',
   },
   {
     id: 'devoluciones',
-    question: '¿Tienen cambios o devoluciones?',
+    question: '¿Puedo devolver o cambiar productos?',
     answer:
-      'Sí. 30 días con garantía de satisfacción. Si el producto llega dañado o no estás conforme, escríbenos y lo resolvemos.',
-  },
-  {
-    id: 'pago',
-    question: '¿Qué métodos de pago aceptan?',
-    answer:
-      'Mercado Pago (redirección segura), tarjetas de crédito/débito, transferencia bancaria y efectivo según el país.',
+      'Sí, tenemos garantía de satisfacción de 30 días. Si el producto llega dañado, no cumple tus expectativas o tienes alguna reacción, contáctanos y te reembolsamos o cambiamos el producto sin preguntas.',
   },
 ]

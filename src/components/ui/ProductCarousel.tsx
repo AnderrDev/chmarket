@@ -7,6 +7,7 @@ import { currency } from '../../utils/format'
 import { useCart } from '../../context/CartContext'
 import type { CartItem } from '../../data/entities/cart'
 import { useToast } from '../../context/ToastContext'
+import SectionDivider from './SectionDivider'
 
 type ProductCarouselProps = {
   products: CatalogViewRow[]
@@ -247,6 +248,8 @@ export default function ProductCarousel({
 
   return (
     <section className="py-8 sm:py-12">
+            <SectionDivider variant="gradient" />
+
       <div className="container">
         <div className="flex items-end justify-between mb-6 sm:mb-8">
           <div>

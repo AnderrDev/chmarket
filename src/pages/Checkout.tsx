@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom"
 import { useCart } from "../context/CartContext"
 import { CustomerInfo } from "../data/entities/customer"
 import { currency } from "../utils/format"
+import { keyOf } from "../utils/cart"
 import Input from "../components/forms/Input"
 import BackButton from "../components/common/BackButton"
 
@@ -106,7 +107,7 @@ const onSubmit = (e: React.FormEvent<HTMLFormElement>) => {
           <h2 className="text-xl text-white mb-4">Order Summary</h2>
           <div className="space-y-3 mb-4">
             {items.map(i => (
-              <div key={i.id} className="flex justify-between items-center py-2 border-b border-ch-gray/20">
+              <div key={keyOf(i)} className="flex justify-between items-center py-2 border-b border-ch-gray/20">
                 <div>
                   <span className="text-white">{i.name}</span>
                   <span className="text-ch-gray text-sm ml-2">x{i.quantity}</span>

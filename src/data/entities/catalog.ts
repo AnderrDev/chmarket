@@ -25,16 +25,20 @@ export type CatalogProduct = {
 // Tipos de la vista unificada `catalog` (una fila por producto)
 export type CatalogViewVariant = {
   variant_id: string
-  variant_label: string
+  label: string
   sku: string | null
-  flavor?: string | null
-  size?: string | null
+  flavor: string | null
+  size: string | null
+  options: Record<string, any> | null
   price_cents: number
   compare_at_price_cents: number | null
-  currency: string | null
+  currency: string
   stock: number
-  low_stock_threshold?: number | null
+  low_stock_threshold: number | null
   is_active: boolean
+  is_default: boolean
+  position: number
+  images: any | null
 }
 
 export type CatalogViewRow = {
@@ -44,18 +48,23 @@ export type CatalogViewRow = {
   type: string
   description: string | null
   long_description: string | null
-  images: unknown
-  is_featured: boolean | null
-  is_active: boolean | null
+  product_images: any | null
+  features: string[] | null
+  ingredients: string[] | null
+  nutrition_facts: Record<string, any> | null
+  tags: string[] | null
+  is_featured: boolean
+  is_active: boolean
   variants: CatalogViewVariant[] | null
   min_price_cents: number | null
   min_compare_at_price_cents: number | null
   variant_ids: string[] | null
-  rating_avg?: number | null
-  reviews_count?: number | null
-  features?: string[] | null
-  ingredients?: string[] | null
-  nutrition_facts?: Record<string, any> | null
+  default_variant_id: string | null
+  default_price_cents: number | null
+  default_compare_at_price_cents: number | null
+  default_sku: string | null
+  default_variant_label: string | null
+  default_images: any | null
 }
 
 

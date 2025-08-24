@@ -1,5 +1,6 @@
 import { currency } from '../../utils/format'
 import type { CartItem } from '../../data/entities/cart'
+import { keyOf } from '../../utils/cart'
 
 /**
  * Props para `OrderSummary`.
@@ -28,7 +29,7 @@ export default function OrderSummary({ items, subtotal, subtotalCents, discountC
       <h2 className="text-xl text-white mb-4">Resumen de pago</h2>
       <div className="space-y-3 mb-4 max-h-[320px] overflow-y-auto pr-1">
         {items.map((i) => (
-          <div key={(i as any).variant_id || `id:${i.id}`} className="flex justify-between items-start py-2 border-b border-ch-gray/20">
+          <div key={keyOf(i)} className="flex justify-between items-start py-2 border-b border-ch-gray/20">
             <div className="text-sm">
               <div className="text-white">{i.name}</div>
               <div className="text-ch-gray">x{i.quantity} · {currency(i.price, 'es-CO', 'COP')} c/u</div>

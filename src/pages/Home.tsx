@@ -13,11 +13,13 @@ import FinalCTA from '../components/home/FinalCTA'
 export default function Home() {
   const { items, loading, error } = useCatalog(24)
   const top = useMemo(() => {
-    const featured = items.filter(p => (p).is_featured)
+    const featured = items.filter(p => p.is_featured)
     console.log(featured)
     return (featured.length ? featured : items).slice(0, 4)
   }, [items])
-  const heroImage = useMemo(() => pickImage(items[0]?.images) || null, [items])
+  const heroImage = useMemo(() => {
+    return  'https://uxhzkpcmufatvrzzuskq.supabase.co/storage/v1/object/public/product-images/Captura%20de%20pantalla%202025-08-11%20a%20la(s)%209.37.53%20p.m..png'
+  }, [items])
 
   return (
     <>

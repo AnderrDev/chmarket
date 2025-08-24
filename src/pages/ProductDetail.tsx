@@ -9,7 +9,7 @@ import useProductBySlug from '../hooks/useProductBySlug'
 import ProductGallery from '../components/products/ProductGallery'
 import ProductDetailSkeleton from '../components/products/ProductDetailSkeleton'
 import BackButton from '../components/common/BackButton'
-import ProductCard from '../components/products/ProductCard'
+import ProductCarousel from '../components/ui/ProductCarousel'
 import { useCatalog } from '../hooks/useCatalog'
 import { useToast } from '../context/ToastContext'
 
@@ -19,17 +19,23 @@ export default function ProductDetail() {
   const { add } = useCart()
   const { showToast } = useToast()
   const [fav, setFav] = useState(false)
+  const [variantLoading, setVariantLoading] = useState(false)
   const { product: p, loading } = useProductBySlug(slug)
 
-  const initialVariant = useMemo(() => (p?.variants || []).find(v => v.is_active) || (p?.variants || [])[0], [p])
+  const initialVariant = useMemo(() => (p?.variants || []).find(v => v.is_default && v.is_active) || (p?.variants || [])[0], [p])
   const [selectedVariantId, setSelectedVariantId] = useState<string | undefined>(initialVariant?.variant_id)
   const selectedVariant = useMemo(() => (p?.variants || []).find(v => v.variant_id === selectedVariantId) || initialVariant, [p, selectedVariantId, initialVariant])
   const price = (selectedVariant?.price_cents || 0) / 100
   const original = typeof selectedVariant?.compare_at_price_cents === 'number' ? (selectedVariant!.compare_at_price_cents as number) / 100 : undefined
   const currencyCode = selectedVariant?.currency || 'COP'
   const inStock = selectedVariant?.stock ?? 0
-  const ratingValue = Number(((p as any)?.rating ?? (p as any)?.rating_avg ?? 0))
-  const reviewsCount = (p as any)?.reviews ?? (p as any)?.reviews_count ?? 0
+  const ratingValue = 4.8 // Valor por defecto ya que no está en la nueva estructura
+  const reviewsCount = 0 // Valor por defecto ya que no está en la nueva estructura
+
+  // Scroll al inicio cuando se carga la página
+  useEffect(() => {
+    window.scrollTo(0, 0)
+  }, [slug])
 
   useEffect(() => {
     const qp = searchParams.get('v')
@@ -47,11 +53,27 @@ export default function ProductDetail() {
     setSearchParams(curr, { replace: true })
   }, [selectedVariant?.variant_id])
 
+  const handleVariantChange = (newVariantId: string) => {
+    setVariantLoading(true)
+    setSelectedVariantId(newVariantId)
+    
+    // Simular un pequeño delay para que se vea el loading
+    setTimeout(() => {
+      setVariantLoading(false)
+    }, 300)
+  }
+
   if (loading) return <ProductDetailSkeleton />
   if (!p) return <div className="container py-16 text-ch-gray">Producto no encontrado</div>
 
-  const first = pickImage(p.images)
-  const imgs: string[] = first ? [first] : []
+  // Obtener imágenes del producto y variante seleccionada
+  const productImages = pickImage(p.product_images) ? [pickImage(p.product_images)!] : []
+  const variantImages = selectedVariant?.images ? pickImage(selectedVariant.images) ? [pickImage(selectedVariant.images)!] : [] : []
+  const defaultImages = pickImage(p.default_images) ? [pickImage(p.default_images)!] : []
+  
+  // Combinar imágenes: variante seleccionada > imágenes por defecto > imágenes del producto
+  const allImages = [...variantImages, ...defaultImages, ...productImages].filter(Boolean)
+  const imgs: string[] = allImages.length > 0 ? allImages : ['/placeholder-product.svg']
 
   return (
     <div className="container py-10">
@@ -59,7 +81,13 @@ export default function ProductDetail() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
         <div className="relative">
-          <ProductGallery images={imgs} alt={p.name} />
+          {variantLoading ? (
+            <div className="relative overflow-hidden rounded-2xl">
+              <div className="animate-pulse w-full h-96 bg-ch-medium-gray" />
+            </div>
+          ) : (
+            <ProductGallery images={imgs} alt={p.name} />
+          )}
           <div className="absolute top-4 right-4 flex gap-2">
             <button className="p-2 bg-black/70 rounded-full hover:bg-black/90"><Share2 className="w-5 h-5 text-white"/></button>
             <button onClick={() => setFav(v => !v)} className="p-2 bg-black/70 rounded-full hover:bg-black/90">
@@ -74,20 +102,20 @@ export default function ProductDetail() {
               <span className="inline-block px-3 py-1 rounded-full text-sm font-semibold bg-ch-primary/20 text-ch-primary border border-ch-primary/30">
                 {p.type?.toUpperCase()}
               </span>
-              {(p as any).is_featured && (
+              {p.is_featured && (
                 <span className="inline-block px-3 py-1 rounded-full text-xs font-semibold bg-yellow-500/20 text-yellow-400 border border-yellow-400/30">
                   DESTACADO
                 </span>
               )}
-              {(p as any).is_active === false && (
+              {p.is_active === false && (
                 <span className="inline-block px-3 py-1 rounded-full text-xs font-semibold bg-red-500/20 text-red-400 border border-red-400/30">
                   INACTIVO
                 </span>
               )}
             </div>
             <h1 className="text-4xl font-secondary text-white mt-4">{p.name}</h1>
-            {(p as any).description && (
-              <p className="text-ch-gray mt-2">{(p as any).description}</p>
+            {p.description && (
+              <p className="text-ch-gray mt-2">{p.description}</p>
             )}
             <div className="flex items-center gap-3 mt-3">
               <div className="flex items-center">
@@ -120,28 +148,30 @@ export default function ProductDetail() {
                 <select
                   className="w-full bg-ch-dark-gray border border-ch-gray/30 text-white rounded-lg p-3"
                   value={selectedVariant?.variant_id || ''}
-                  onChange={(e) => setSelectedVariantId(e.target.value)}
+                  onChange={(e) => handleVariantChange(e.target.value)}
+                  disabled={variantLoading}
                 >
                   {(p.variants || []).map(v => (
                     <option key={v.variant_id} value={v.variant_id}>
-                      {v.variant_label} — {currency(v.price_cents / 100, 'es-CO', v.currency || 'COP')}
+                      {v.label} — {currency(v.price_cents / 100, 'es-CO', v.currency || 'COP')}
                     </option>
                   ))}
                 </select>
               </div>
 
-              {Array.from(new Set((p.variants || []).map(v => (v as any).flavor).filter(Boolean))).length > 0 && (
+              {Array.from(new Set((p.variants || []).map(v => v.flavor).filter(Boolean))).length > 0 && (
                 <div className="space-y-2">
                   <div className="text-ch-gray text-sm">Sabor</div>
                   <div className="flex flex-wrap gap-2">
-                    {Array.from(new Set((p.variants || []).map(v => (v as any).flavor).filter(Boolean))).map((fl: any) => {
-                      const match = (p.variants || []).find(v => (v as any).flavor === fl)
-                      const isSelected = (selectedVariant as any)?.flavor === fl
+                    {Array.from(new Set((p.variants || []).map(v => v.flavor).filter(Boolean))).map((fl: any) => {
+                      const match = (p.variants || []).find(v => v.flavor === fl)
+                      const isSelected = selectedVariant?.flavor === fl
                       return (
                         <button
                           key={String(fl)}
-                          onClick={() => match && setSelectedVariantId(match.variant_id)}
-                          className={`px-3 py-1 rounded-full border ${isSelected ? 'bg-ch-primary text-black border-ch-primary' : 'border-ch-gray/40 text-white'}`}
+                          onClick={() => match && handleVariantChange(match.variant_id)}
+                          disabled={variantLoading}
+                          className={`px-3 py-1 rounded-full border ${isSelected ? 'bg-ch-primary text-black border-ch-primary' : 'border-ch-gray/40 text-white'} ${variantLoading ? 'opacity-50 cursor-not-allowed' : 'hover:border-ch-gray/60'}`}
                         >
                           {String(fl)}
                         </button>
@@ -151,18 +181,19 @@ export default function ProductDetail() {
                 </div>
               )}
 
-              {Array.from(new Set((p.variants || []).map(v => (v as any).size).filter(Boolean))).length > 0 && (
+              {Array.from(new Set((p.variants || []).map(v => v.size).filter(Boolean))).length > 0 && (
                 <div className="space-y-2">
                   <div className="text-ch-gray text-sm">Tamaño</div>
                   <div className="flex flex-wrap gap-2">
-                    {Array.from(new Set((p.variants || []).map(v => (v as any).size).filter(Boolean))).map((sz: any) => {
-                      const match = (p.variants || []).find(v => (v as any).size === sz)
-                      const isSelected = (selectedVariant as any)?.size === sz
+                    {Array.from(new Set((p.variants || []).map(v => v.size).filter(Boolean))).map((sz: any) => {
+                      const match = (p.variants || []).find(v => v.size === sz)
+                      const isSelected = selectedVariant?.size === sz
                       return (
                         <button
                           key={String(sz)}
-                          onClick={() => match && setSelectedVariantId(match.variant_id)}
-                          className={`px-3 py-1 rounded-full border ${isSelected ? 'bg-ch-primary text-black border-ch-primary' : 'border-ch-gray/40 text-white'}`}
+                          onClick={() => match && handleVariantChange(match.variant_id)}
+                          disabled={variantLoading}
+                          className={`px-3 py-1 rounded-full border ${isSelected ? 'bg-ch-primary text-black border-ch-primary' : 'border-ch-gray/40 text-white'} ${variantLoading ? 'opacity-50 cursor-not-allowed' : 'hover:border-ch-gray/60'}`}
                         >
                           {String(sz)}
                         </button>
@@ -189,17 +220,17 @@ export default function ProductDetail() {
           <div className="bg-ch-dark-gray rounded-lg p-6 border border-ch-gray/20">
             <h3 className="text-xl font-secondary text-white mb-4">Key Features</h3>
             <ul className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {(((p as any).features as string[]) ?? []).map((f: string, i: number) => (
+              {(p.features || []).map((f: string, i: number) => (
                 <li key={i} className="flex items-center text-ch-gray"><Check className="w-5 h-5 text-ch-primary mr-3"/>{f}</li>
               ))}
             </ul>
           </div>
 
-          {(((p as any).ingredients as string[]) ?? []).length > 0 && (
+          {(p.ingredients || []).length > 0 && (
             <div className="bg-ch-dark-gray rounded-lg p-6 border border-ch-gray/20">
               <h3 className="text-xl font-secondary text-white mb-4">Ingredientes</h3>
               <ul className="list-disc list-inside text-ch-gray">
-                {(((p as any).ingredients as string[]) ?? []).map((ing: string, i: number) => (
+                {(p.ingredients || []).map((ing: string, i: number) => (
                   <li key={i}>{ing}</li>
                 ))}
               </ul>
@@ -208,11 +239,11 @@ export default function ProductDetail() {
 
           
 
-          {(p as any).nutrition_facts && Object.keys((p as any).nutrition_facts).length > 0 && (
+          {p.nutrition_facts && Object.keys(p.nutrition_facts).length > 0 && (
             <div className="bg-ch-dark-gray rounded-lg p-6 border border-ch-gray/20">
               <h3 className="text-xl font-secondary text-white mb-4">Información Nutricional</h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {Object.entries((p as any).nutrition_facts).map(([k, v]: any) => (
+                {Object.entries(p.nutrition_facts).map(([k, v]: any) => (
                   <div key={k} className="flex justify-between text-ch-gray">
                     <span className="text-white/80">{k}</span>
                     <span>{String(v)}</span>
@@ -224,8 +255,8 @@ export default function ProductDetail() {
 
           <div className="flex items-center justify-between text-sm bg-ch-dark-gray rounded-lg p-4 border border-ch-gray/20">
             <span className="text-ch-gray">Disponibilidad:</span>
-            <span className={`font-semibold ${inStock === 0 ? 'text-red-400' : inStock <= ((selectedVariant as any)?.low_stock_threshold || 5) ? 'text-yellow-400' : 'text-ch-primary'}`}>
-              {inStock === 0 ? 'Sin stock' : inStock <= (((selectedVariant as any)?.low_stock_threshold) || 5) ? `Pocas unidades (${inStock})` : `${inStock} unidades`}
+            <span className={`font-semibold ${inStock === 0 ? 'text-red-400' : inStock <= (selectedVariant?.low_stock_threshold || 5) ? 'text-yellow-400' : 'text-ch-primary'}`}>
+              {inStock === 0 ? 'Sin stock' : inStock <= (selectedVariant?.low_stock_threshold || 5) ? `Pocas unidades (${inStock})` : `${inStock} unidades`}
             </span>
           </div>
 
@@ -254,7 +285,7 @@ export default function ProductDetail() {
               add(forCart)
               showToast('Producto agregado al carrito', { type: 'success' })
             }}
-            disabled={inStock === 0}
+            disabled={inStock === 0 || variantLoading}
             className="w-full bg-ch-primary text-black py-4 rounded-lg text-lg font-semibold hover:opacity-90 disabled:opacity-50"
           >
             {inStock === 0 ? 'Out of Stock' : `Add to Cart – ${currency(price, 'es-CO', currencyCode)}`}
@@ -263,7 +294,7 @@ export default function ProductDetail() {
       </div>
 
       {/* Recomendados */}
-      <RecommendedProducts currentSlug={p.slug} currentType={(p as any).type} />
+      <RecommendedProducts currentSlug={p.slug} currentType={p.type} />
     </div>
   )
 }
@@ -283,21 +314,17 @@ function RecommendedProducts({ currentSlug, currentType }: { currentSlug: string
   const recommended = (items || [])
     .filter(it => it.slug !== currentSlug)
     .filter(it => (currentType ? it.type === currentType : true))
-    .slice(0, 4)
+    .slice(0, 6)
 
   if (recommended.length === 0) return null
 
   return (
-    <section className="mt-16">
-      <h3 className="text-2xl font-secondary text-white mb-6">Productos recomendados</h3>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        {recommended.map(p => (
-          <ProductCard key={p.product_id} p={p} />
-        ))}
-      </div>
-      <div className="mt-6">
-        <Link to="/products" className="text-ch-primary hover:underline">Ver todos los productos</Link>
-      </div>
-    </section>
+    <ProductCarousel
+      products={recommended}
+      title="Productos relacionados"
+      subtitle="Descubre más productos que te pueden interesar"
+      showViewAll={true}
+      viewAllLink="/products"
+    />
   )
 }

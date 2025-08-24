@@ -1,8 +1,4 @@
 // supabase/functions/mp-webhook/index.ts
-// Webhook de Mercado Pago: actualiza estado de pago en orders.
-// Si queda APPROVED: decrementa inventario y marca order.status='PAID'.
-// Requiere: SUPABASE_URL, SERVICE_ROLE_KEY, MP_ACCESS_TOKEN, opcional MP_WEBHOOK_TOKEN
-
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
@@ -44,25 +40,24 @@ Deno.serve(async (req) => {
     }
 
     const body = await req.json().catch(() => ({}));
-    // Evento típico: { type: "payment", data: { id: "..." } }
     if (!body?.type || String(body.type).toLowerCase() !== "payment" || !body?.data?.id) {
       return plain("ok");
     }
 
-    // 1) Leer pago de MP
     const payId = body.data.id;
     const r = await mpFetch(`/v1/payments/${payId}`);
     if (!r.ok) return plain("ok");
     const mp = await r.json();
 
-    const status = String(mp.status || "").toUpperCase();         // APPROVED | PENDING | ...
-    const extRef = String(mp.external_reference || "");           // debe ser order_number
+    const status = String(mp.status || "").toUpperCase();   // APPROVED | PENDING | ...
+    const extRef = String(mp.external_reference || "");     // order_number
     const payIdStr = String(mp.id);
 
     if (!extRef) return plain("ok");
 
-    // 2) Actualizar orden
     const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
+
+    // Actualiza pago en la orden
     const { data: order, error: updErr } = await supabase
       .from("orders")
       .update({
@@ -72,10 +67,10 @@ Deno.serve(async (req) => {
       })
       .eq("order_number", extRef)
       .select("id, status")
-      .single();
+      .maybeSingle();
     if (updErr || !order) return plain("ok");
 
-    // 3) Si está aprobado, decrementar stock y marcar status = PAID
+    // Si APPROVED → decrementar stock + marcar PAID (idempotente simple)
     if (status === "APPROVED" && order.status !== "PAID") {
       const { data: items } = await supabase
         .from("order_items")

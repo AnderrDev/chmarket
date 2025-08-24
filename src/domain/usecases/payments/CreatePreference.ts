@@ -1,5 +1,5 @@
 import type { PaymentRepository } from '../../repositories/payments/PaymentRepository'
-import type { PreferencePayload } from '../../../services/mp'
+import type { PreferencePayload } from '../../../data/entities/order'
 
 export class CreatePreferenceUseCase {
   constructor(private readonly repository: PaymentRepository) {}

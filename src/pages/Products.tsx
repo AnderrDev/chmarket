@@ -38,8 +38,8 @@ export default function Products() {
     } else {
       // relevance: featured primero, luego por nombre
       result = [...result].sort((a, b) => {
-        const fa = (a as any).is_featured ? 1 : 0
-        const fb = (b as any).is_featured ? 1 : 0
+        const fa = a.is_featured ? 1 : 0
+        const fb = b.is_featured ? 1 : 0
         if (fa !== fb) return fb - fa
         return a.name.localeCompare(b.name)
       })
@@ -57,27 +57,27 @@ export default function Products() {
   }
 
   return (
-    <section className="py-16">
+    <section className="py-8 sm:py-12 md:py-16">
       <div className="container">
-        <div className="text-center mb-8">
-          <h2 className="text-4xl font-secondary text-white mb-3">Nuestros Productos</h2>
-          <p className="text-ch-gray">Formulados científicamente para ayudarte a lograr tus objetivos.</p>
+        <div className="text-center mb-6 sm:mb-8">
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-secondary text-white mb-2 sm:mb-3">Nuestros Productos</h2>
+          <p className="text-ch-gray text-sm sm:text-base">Formulados científicamente para ayudarte a lograr tus objetivos.</p>
         </div>
 
         {/* Controles móviles */}
-        <div className="md:hidden mb-6 flex items-center justify-between">
+        <div className="md:hidden mb-4 sm:mb-6 flex items-center justify-between">
           <button
             onClick={() => setShowFilters(true)}
-            className="px-4 py-2 rounded-lg border border-ch-gray/30 text-white bg-ch-dark-gray"
+            className="px-3 sm:px-4 py-2 rounded-lg border border-ch-gray/30 text-white bg-ch-dark-gray text-sm"
           >
             Filtrar
           </button>
           <div className="text-ch-gray text-sm">{filtered.length} resultados</div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 sm:gap-6 lg:gap-8">
           {/* Sidebar filtros */}
-          <aside className="md:col-span-1 hidden md:block">
+          <aside className="lg:col-span-1 hidden lg:block">
             <div className="sticky top-24">
               <FiltersPanel
                 query={query}
@@ -98,10 +98,10 @@ export default function Products() {
           </aside>
 
           {/* Grid productos */}
-          <div className="md:col-span-3">
+          <div className="lg:col-span-3">
             {loading && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                {Array.from({ length: 4 }).map((_, i) => (
+              <div className="grid-products">
+                {Array.from({ length: 6 }).map((_, i) => (
                   <ProductCardSkeleton key={i} />
                 ))}
               </div>
@@ -112,9 +112,23 @@ export default function Products() {
             )}
 
             {!loading && !error && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                {filtered.map(p => <ProductCard key={p.product_id} p={p} />)}
-              </div>
+              <>
+                {filtered.length === 0 ? (
+                  <div className="text-center py-12">
+                    <div className="text-ch-gray text-lg mb-4">No se encontraron productos</div>
+                    <button
+                      onClick={clearAll}
+                      className="px-4 py-2 bg-ch-primary text-black rounded-lg font-semibold hover:opacity-90 transition-opacity"
+                    >
+                      Limpiar filtros
+                    </button>
+                  </div>
+                ) : (
+                  <div className="grid-products">
+                    {filtered.map(p => <ProductCard key={p.product_id} p={p} />)}
+                  </div>
+                )}
+              </>
             )}
           </div>
         </div>

@@ -1,4 +1,4 @@
-import type { PreferencePayload } from '../../services/mp'
+import type { PreferencePayload } from '../entities/order'
 
 export interface PaymentsDataSource {
   createPreference(payload: PreferencePayload): Promise<{

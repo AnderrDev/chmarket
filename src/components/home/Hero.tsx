@@ -1,7 +1,7 @@
 import { Shield, Award, Zap, Users, ArrowRight } from 'lucide-react'
 
 type HeroProps = {
-  imageUrl: string | null
+  imageUrl: string
   altText?: string
 }
 
@@ -41,11 +41,16 @@ export default function Hero({ imageUrl, altText = 'CH+' }: HeroProps) {
           <div className="order-1 lg:order-2">
             <div className="relative mx-auto max-w-lg">
               <div className="aspect-[4/5] rounded-3xl overflow-hidden border border-ch-gray/20 bg-ch-dark-gray shadow-3xl">
-                {imageUrl ? (
-                  <img src={imageUrl} alt={altText} className="w-full h-full object-cover" />
-                ) : (
-                  <div className="w-full h-full bg-ch-medium-gray" />
-                )}
+                <img 
+                  src={imageUrl} 
+                  alt={altText} 
+                  className="w-full h-full object-cover"
+                  onError={(e) => {
+                    // Fallback a imagen placeholder si la imagen falla
+                    const target = e.target as HTMLImageElement
+                    target.src = '/placeholder-product.svg'
+                  }}
+                />
               </div>
               <div className="absolute -bottom-6 -left-6 bg-ch-dark-gray/80 backdrop-blur border border-ch-gray/30 rounded-2xl p-4 text-sm text-white max-w-[220px]">
                 <p className="font-semibold">Resultados visibles</p>

@@ -2,6 +2,7 @@
 // src/app/AppRoutes.tsx
 // =============================================
 import { Route, Routes, useLocation } from 'react-router-dom'
+import { useEffect } from 'react'
 import Footer from '../components/layout/Footer'
 import Header from '../components/layout/Header'
 import Checkout from '../pages/Checkout'
@@ -15,6 +16,12 @@ import Payment from '../pages/Payment'
 
 export default function AppRoutes() {
   const location = useLocation()
+  
+  // Hacer scroll hacia arriba cuando cambie la ruta
+  useEffect(() => {
+    window.scrollTo(0, 0)
+  }, [location.pathname])
+  
   return (
     <div className="min-h-screen bg-ch-black">
       <Header />

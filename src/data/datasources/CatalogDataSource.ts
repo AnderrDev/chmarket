@@ -52,8 +52,8 @@ export class SupabaseCatalogDataSource implements CatalogDataSource {
 }
 
 function pickDefaultVariant(row: CatalogViewRow): CatalogViewVariant | undefined {
-  // La agregación en SQL ya viene ordenada por precio asc, luego label asc
-  return (row.variants || []).find(v => v.is_active) || (row.variants || [])[0]
+  // La agregación en SQL ya viene ordenada por posición asc, precio asc, luego label asc
+  return (row.variants || []).find(v => v.is_default && v.is_active) || (row.variants || [])[0]
 }
 
 // A partir de ahora, devolvemos el row completo con sus variantes.

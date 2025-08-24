@@ -1,8 +1,4 @@
 // supabase/functions/order-status/index.ts
-// Devuelve el estado de una orden por order_number (para pantalla de confirmación).
-// Requiere: SUPABASE_URL, SERVICE_ROLE_KEY
-// RLS: solo service_role puede consultar órdenes (coincide con tus policies).
-
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
@@ -32,7 +28,6 @@ Deno.serve(async (req) => {
 
     const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
 
-    // 1) Orden
     const { data: order, error: oErr } = await supabase
       .from("orders")
       .select("*")
@@ -44,21 +39,18 @@ Deno.serve(async (req) => {
       return cors({ error: "not found" }, 404);
     }
 
-    // 2) Items
     const { data: items, error: iErr } = await supabase
       .from("order_items")
       .select("product_id, variant_id, name_snapshot, variant_label, unit_price_cents, quantity")
       .eq("order_id", order.id);
     if (iErr) throw iErr;
 
-    // 3) Descuento aplicado (snapshot)
     const { data: discounts, error: dErr } = await supabase
       .from("order_discounts")
       .select("code_snapshot, type_snapshot, amount_applied_cents, created_at")
       .eq("order_id", order.id);
     if (dErr) throw dErr;
 
-    // 4) Resumen
     return cors({
       order: {
         order_number: order.order_number,

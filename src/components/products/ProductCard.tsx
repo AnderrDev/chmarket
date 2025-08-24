@@ -14,8 +14,8 @@ export default function ProductCard({ p }: { p: CatalogViewRow }) {
   const { showToast } = useToast()
   const [fav, setFav] = useState(false)
 
-  const img = pickImage(p.images)
-  const defaultVariant: CatalogViewVariant | undefined = (p.variants || []).find(v => v.is_active) || (p.variants || [])[0]
+  const img = pickImage(p.default_images || p.product_images)
+  const defaultVariant: CatalogViewVariant | undefined = (p.variants || []).find(v => v.is_default && v.is_active) || (p.variants || [])[0]
   const canBuy = !!defaultVariant && defaultVariant.stock > 0
 
   // Objeto compatible con el carrito, INCLUYE variant_id ✅
@@ -23,109 +23,127 @@ export default function ProductCard({ p }: { p: CatalogViewRow }) {
     // dejamos id como fallback legacy, pero la clave real será variant_id
     id: 0,
     variant_id: defaultVariant?.variant_id || '',
-    name: `${p.name}${defaultVariant ? ` – ${defaultVariant.variant_label}` : ''}`,
+    name: `${p.name}${defaultVariant ? ` – ${defaultVariant.label}` : ''}`,
     type: (p.type || 'protein') as 'creatine' | 'protein',
     price: (defaultVariant?.price_cents || 0) / 100,
     originalPrice: undefined,
-    image: img || 'https://images.unsplash.com/photo-1517033777-6203d1f5c3f1?q=80&w=800&auto=format&fit=crop',
+    image: img || '',
     images: [img].filter(Boolean) as string[],
     description: p.description || '',
     longDescription: p.long_description || '',
-    features: (p as any).features || [],
-    ingredients: (p as any).ingredients || [],
-    nutritionFacts: (p as any).nutrition_facts || {},
-    rating: (p as any).rating ?? 4.8,
-    reviews: (p as any).reviews ?? 0,
+    features: p.features || [],
+    ingredients: p.ingredients || [],
+    nutritionFacts: p.nutrition_facts || {},
+    rating: 4.8, // Valor por defecto
+    reviews: 0, // Valor por defecto
     inStock: defaultVariant?.stock || 0,
     servings: 0,
     slug: p.slug || '', // aseguramos que slug esté presente
   }
 
   return (
-    <div className="bg-ch-dark-gray rounded-xl shadow-2xl border border-ch-gray/20 overflow-hidden group">
-      <div className="relative overflow-hidden">
-        {img ? (
+    <div className="group relative bg-ch-dark-gray rounded-xl overflow-hidden border border-ch-gray/20 hover:border-ch-primary/50 card-hover flex flex-col h-full">
+      <Link to={`/product/${p.slug}`} className="block card-interactive flex-1">
+        <div className="relative aspect-square overflow-hidden">
           <img
-            src={img}
+            src={img || '/placeholder-product.svg'}
             alt={p.name}
-            className="w-full h-64 object-cover group-hover:scale-110 transition-transform duration-700"
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+            onError={(e) => {
+              // Fallback a imagen placeholder si la imagen falla
+              const target = e.target as HTMLImageElement
+              target.src = '/placeholder-product.svg'
+            }}
           />
-        ) : (
-          <div className="w-full h-64 bg-ch-medium-gray" />
-        )}
-
-        <button
-          onClick={() => setFav(v => !v)}
-          className="absolute bottom-4 right-4 p-2 bg-black/70 rounded-full"
-        >
-          <Heart className={`w-5 h-5 ${fav ? 'text-ch-primary fill-current' : 'text-white'}`} />
-        </button>
-      </div>
-
-      <div className="p-6">
-        <span className="inline-block px-3 py-1 rounded-full text-xs font-semibold bg-ch-primary/20 text-ch-primary border border-ch-primary/30">
-          {p.type?.toUpperCase()}
-        </span>
-
-        <div className="mt-3 text-xl font-secondary text-white">{p.name}</div>
-        {p.variants && p.variants.length > 0 && (
-          <div className="text-ch-gray text-sm mt-1">
-            {p.variants.map((variant, index) => (
-              <span key={variant.variant_id}>
-                {variant.variant_label}
-                {index < p.variants!.length - 1 && ', '}
-              </span>
-            ))}
-          </div>
-        )}
-        {p.description && <p className="text-ch-gray text-sm mt-2 line-clamp-2">{p.description}</p>}
-
-        {p.features?.length ? (
-          <div className="grid grid-cols-2 gap-2 my-4">
-            {p.features.slice(0, 4).map((f, i) => (
-              <div key={i} className="flex items-center text-sm text-ch-gray">
-                <Check className="w-4 h-4 text-ch-primary mr-2" />
-                {f}
-              </div>
-            ))}
-          </div>
-        ) : null}
-
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-2">
-            {typeof defaultVariant?.compare_at_price_cents === 'number' && defaultVariant!.compare_at_price_cents! > (defaultVariant!.price_cents) && (
-              <span className="text-base text-ch-gray line-through mr-1">
-                {currency((defaultVariant!.compare_at_price_cents as number) / 100, 'es-CO', defaultVariant!.currency || 'COP')}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+          
+          {/* Badges compactos */}
+          <div className="absolute top-2 sm:top-3 left-2 sm:left-3 flex flex-col gap-1 sm:gap-2">
+            {p.is_featured && (
+              <span className="inline-block px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full text-xs font-semibold bg-yellow-500/90 text-black">
+                DESTACADO
               </span>
             )}
-            <span className="text-2xl font-bold text-white">
-              {currency((defaultVariant?.price_cents || 0) / 100, 'es-CO', defaultVariant?.currency || 'COP')}
+            <span className="inline-block px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full text-xs font-semibold bg-ch-primary/90 text-black">
+              {p.type?.toUpperCase()}
             </span>
           </div>
-          {/* <div className="flex items-center gap-1 text-sm text-white">
-            <Star className="w-4 h-4 text-ch-primary fill-current" />
-            <span>{(p.rating ?? 4.8).toFixed(1)}</span>
-          </div> */}
-        </div>
 
-        <div className="space-y-3">
-          <Link
-            to={`/product/${p.slug}`}
-            className="w-full inline-flex items-center justify-center border border-ch-gray/30 text-white font-semibold py-3 rounded-lg hover:bg-ch-light-gray/70"
-          >
-            Ver detalles
-          </Link>
+          {/* Favorite button */}
           <button
-            onClick={() => {
-              add(productForCart)
-              showToast('Producto agregado al carrito', { type: 'success' })
+            onClick={(e) => {
+              e.preventDefault()
+              setFav(v => !v)
             }}
-            disabled={!canBuy}
-            className="w-full bg-ch-primary text-black font-semibold py-3 rounded-lg hover:opacity-90 disabled:opacity-50"
+            className="absolute top-2 sm:top-3 right-2 sm:right-3 p-1.5 sm:p-2 bg-black/70 rounded-full hover:bg-black/90 transition-colors card-interactive"
           >
-            {canBuy ? 'Add to Cart' : 'Out of Stock'}
+            <Heart className={`w-3.5 sm:w-4 h-3.5 sm:h-4 ${fav ? 'text-ch-primary fill-current' : 'text-white'}`} />
           </button>
         </div>
+
+        <div className="p-3 sm:p-4 flex-1 flex flex-col">
+          <h3 className="text-base sm:text-lg font-secondary text-white mb-1 sm:mb-2 group-hover:text-ch-primary transition-colors line-clamp-1">
+            {p.name}
+          </h3>
+          
+          {p.description && (
+            <p className="text-ch-gray text-xs sm:text-sm mb-2 sm:mb-3 line-clamp-2 flex-1">
+              {p.description}
+            </p>
+          )}
+
+          <div className="flex items-center justify-between mb-2 sm:mb-3">
+            <div className="flex items-center gap-1 sm:gap-2">
+              {defaultVariant?.compare_at_price_cents && defaultVariant.compare_at_price_cents > defaultVariant.price_cents && (
+                <span className="text-xs sm:text-sm text-ch-gray line-through">
+                  {currency(defaultVariant.compare_at_price_cents / 100, 'es-CO', defaultVariant.currency)}
+                </span>
+              )}
+              <span className="text-lg sm:text-xl font-bold text-white">
+                {currency((defaultVariant?.price_cents || 0) / 100, 'es-CO', defaultVariant?.currency || 'COP')}
+              </span>
+            </div>
+            
+            <div className="flex items-center text-xs sm:text-sm text-ch-gray">
+              <Check className="w-3 sm:w-4 h-3 sm:h-4 text-ch-primary mr-1" />
+              <span className="hidden sm:inline">{defaultVariant?.stock || 0} disponibles</span>
+              <span className="sm:hidden">{defaultVariant?.stock || 0}</span>
+            </div>
+          </div>
+
+          {/* Variants preview compacto */}
+          {(p.variants || []).length > 1 && (
+            <div className="flex flex-wrap gap-1 mb-2 sm:mb-3">
+              {(p.variants || []).slice(0, 3).map((variant, i) => (
+                <span
+                  key={variant.variant_id}
+                  className="inline-block px-1.5 sm:px-2 py-0.5 sm:py-1 rounded text-xs bg-ch-gray/20 text-ch-gray border border-ch-gray/30"
+                >
+                  {variant.label}
+                </span>
+              ))}
+              {(p.variants || []).length > 3 && (
+                <span className="inline-block px-1.5 sm:px-2 py-0.5 sm:py-1 rounded text-xs bg-ch-gray/20 text-ch-gray border border-ch-gray/30">
+                  +{(p.variants || []).length - 3} más
+                </span>
+              )}
+            </div>
+          )}
+        </div>
+      </Link>
+
+      {/* Add to cart button - siempre en la parte inferior */}
+      <div className="p-3 sm:p-4 pt-0 mt-auto">
+        <button
+          onClick={() => {
+            add(productForCart)
+            showToast('Producto agregado al carrito', { type: 'success' })
+          }}
+          disabled={!canBuy}
+          className="w-full bg-ch-primary text-black py-2.5 sm:py-3 rounded-lg text-sm font-semibold hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 card-interactive"
+        >
+          {!canBuy ? 'Sin stock' : 'Agregar al carrito'}
+        </button>
       </div>
     </div>
   )

@@ -1,8 +1,4 @@
 // supabase/functions/create-preference/index.ts
-// Crea la orden + ítems (+ snapshot de cupón si aplica) y genera preferencia de Mercado Pago.
-// Guarda preference_id en orders.payment_preference_id.
-// Requiere: SUPABASE_URL, SERVICE_ROLE_KEY, MP_ACCESS_TOKEN
-
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
@@ -11,15 +7,14 @@ const SERVICE_ROLE_KEY = Deno.env.get("SERVICE_ROLE_KEY")!;
 const MP_ACCESS_TOKEN = Deno.env.get("MP_ACCESS_TOKEN")!;
 
 type CartItem = { variant_id: string; quantity: number };
-
 type Payload = {
   email: string;
   items: CartItem[];
   shippingAddress?: Record<string, unknown>;
   billingAddress?: Record<string, unknown>;
-  couponCode?: string;          // ej: "WELCOME10"
-  shippingCents?: number;       // opcional (0 por defecto)
-  currency?: string;            // "COP" por defecto
+  couponCode?: string;
+  shippingCents?: number;
+  currency?: string;
 };
 
 const mpFetch = (path: string, init?: RequestInit) =>
@@ -32,7 +27,6 @@ const mpFetch = (path: string, init?: RequestInit) =>
     },
   });
 
-// Utilidad: CORS
 function cors(json: unknown, status = 200) {
   return new Response(JSON.stringify(json), {
     status,
@@ -60,19 +54,20 @@ Deno.serve(async (req) => {
     const currency = body.currency ?? "COP";
     const shippingCents = Math.max(0, body.shippingCents ?? 0);
 
-    // 1) Traer variantes y producto para snapshot de nombre
+    // 1) Variantes (solo activas/no borradas)
     const variantIds = body.items.map((i) => i.variant_id);
     const { data: rows, error: rowsErr } = await supabase
       .from("product_variants")
       .select("id, label, price_cents, in_stock, product_id, products(name)")
-      .in("id", variantIds);
+      .in("id", variantIds)
+      .eq("is_active", true);
     if (rowsErr) throw rowsErr;
     if (!rows || rows.length !== variantIds.length) {
       return cors({ error: "Some variants not found" }, 400);
     }
     const mapVariant = new Map(rows.map((r) => [r.id, r]));
 
-    // 2) Calcular subtotal
+    // 2) Subtotal
     let subtotal = 0;
     for (const it of body.items) {
       const v = mapVariant.get(it.variant_id);
@@ -80,24 +75,22 @@ Deno.serve(async (req) => {
       if (!Number.isFinite(it.quantity) || it.quantity <= 0) {
         return cors({ error: `Invalid quantity for ${it.variant_id}` }, 400);
       }
-      // No disminuimos stock aquí; se hace en webhook cuando el pago queda APPROVED
       subtotal += v.price_cents * it.quantity;
     }
 
-    // 3) Cupón (simple a nivel de orden)
+    // 3) Cupón
     let discountCents = 0;
     let finalShipping = shippingCents;
     let discountRow: any = null;
 
     if (body.couponCode) {
       const code = String(body.couponCode).toUpperCase();
-      const { data: dc, error: dcErr } = await supabase
+      const { data: dc } = await supabase
         .from("discount_codes")
         .select("*")
         .eq("code", code)
         .eq("is_active", true)
         .maybeSingle();
-      if (dcErr) throw dcErr;
 
       if (dc) {
         discountRow = dc;
@@ -113,11 +106,9 @@ Deno.serve(async (req) => {
     }
 
     const total = Math.max(0, subtotal + finalShipping - discountCents);
-
-    // 4) order_number
     const orderNumber = `CH${Date.now()}`;
 
-    // 5) Insertar orden (status CREATED / payment PENDING)
+    // 4) Orden base
     const { data: order, error: oErr } = await supabase
       .from("orders")
       .insert({
@@ -139,10 +130,10 @@ Deno.serve(async (req) => {
       .single();
     if (oErr) throw oErr;
 
-    // 6) Insertar items con snapshot
+    // 5) Items (snapshot)
     const itemsToInsert = body.items.map((it) => {
       const v = mapVariant.get(it.variant_id)!;
-      const name = v.products?.name ?? ""; // snapshot mínimo, opcional
+      const name = v.products?.name ?? "";
       return {
         order_id: order.id,
         product_id: v.product_id,
@@ -156,7 +147,7 @@ Deno.serve(async (req) => {
     const { error: oiErr } = await supabase.from("order_items").insert(itemsToInsert);
     if (oiErr) throw oiErr;
 
-    // 7) Snapshot de descuento (si aplica)
+    // 6) Snapshot cupón
     if (discountRow) {
       const { error: odErr } = await supabase.from("order_discounts").insert({
         order_id: order.id,
@@ -171,7 +162,7 @@ Deno.serve(async (req) => {
       if (odErr) throw odErr;
     }
 
-    // 8) Crear preferencia MP
+    // 7) Preferencia MP
     const prefRes = await mpFetch("/checkout/preferences", {
       method: "POST",
       body: JSON.stringify({
@@ -199,14 +190,13 @@ Deno.serve(async (req) => {
     }
     const pref = await prefRes.json();
 
-    // 9) Guardar preference_id en la orden
+    // 8) Guardar preference_id
     const { error: upErr } = await supabase
       .from("orders")
       .update({ payment_preference_id: pref.id })
       .eq("id", order.id);
     if (upErr) throw upErr;
 
-    // 10) Responder
     return cors({
       order_number: orderNumber,
       preference_id: pref.id,

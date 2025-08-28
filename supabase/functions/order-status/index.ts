@@ -53,6 +53,7 @@ Deno.serve(async (req) => {
 
     return cors({
       order: {
+        id: order.id,
         order_number: order.order_number,
         email: order.email,
         status: order.status,
@@ -62,7 +63,15 @@ Deno.serve(async (req) => {
         discount_cents: order.discount_cents,
         total_cents: order.total_cents,
         currency: order.currency,
+        shipping_address: order.shipping_address,
+        billing_address: order.billing_address,
+        payment_provider: order.payment_provider,
+        payment_preference_id: order.payment_preference_id,
+        payment_id: order.payment_id,
+        payment_external_reference: order.payment_external_reference,
+        payment_raw: order.payment_raw,
         created_at: order.created_at,
+        updated_at: order.updated_at,
       },
       items,
       discounts,

@@ -33,6 +33,7 @@ export default function AppRoutes() {
           <Route path="/checkout" element={<Checkout />} />
           <Route path="/payment" element={<Payment />} />
           <Route path="/processing" element={<Processing />} />
+          <Route path="/confirmation" element={<Confirmation />} />
           {/* back_urls MP */}
           <Route path="/success" element={<Confirmation />} />
           <Route path="/pending" element={<Confirmation />} />

@@ -78,10 +78,14 @@ Deno.serve(async (req) => {
         .eq("order_id", order.id);
 
       for (const it of items ?? []) {
-        await supabase.rpc("decrement_inventory_safe", {
-          p_variant_id: it.variant_id,
-          p_qty: it.quantity,
-        });
+        try {
+          await supabase.rpc("decrement_inventory_safe", {
+            p_variant_id: it.variant_id,
+            p_qty: it.quantity,
+          });
+        } catch (error) {
+          console.error(`Error decrementing inventory for variant ${it.variant_id}:`, error);
+        }
       }
       await supabase.from("orders").update({ status: "PAID" }).eq("id", order.id);
     }

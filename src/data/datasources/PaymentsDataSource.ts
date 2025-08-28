@@ -31,11 +31,17 @@ export class FunctionsPaymentsDataSource implements PaymentsDataSource {
     const res = await fetch(url, { method: 'POST', headers, body: JSON.stringify(payload) })
     if (!res.ok) {
       let msg = 'No se pudo crear la preferencia'
+      let detail = ''
       try {
         const err = await res.json()
-        msg = `${err?.error || msg}${err?.detail ? ' – ' + err.detail : ''}`
-      } catch {}
-      throw new Error(msg)
+        msg = err?.error || msg
+        detail = err?.detail || ''
+        console.error('Payment error response:', err)
+      } catch (parseErr) {
+        console.error('Error parsing response:', parseErr)
+      }
+      const fullMsg = detail ? `${msg} – ${detail}` : msg
+      throw new Error(fullMsg)
     }
     return res.json() as Promise<{
       order_number: string

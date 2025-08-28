@@ -45,6 +45,7 @@ export type PreferencePayload = {
   shippingAddress?: Record<string, unknown>
   billingAddress?: Record<string, unknown>
   couponCode?: string | null
+  shippingCents?: number
 }
 
 

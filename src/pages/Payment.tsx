@@ -54,6 +54,28 @@ export default function Payment() {
         currency: 'COP',
         email: customer.email as string,
         couponCode, // 👈 nombre exacto que usa tu Edge Function
+        shippingAddress: {
+          name: `${customer.firstName} ${customer.lastName}`,
+          email: customer.email,
+          phone: customer.phone,
+          address: customer.address,
+          city: customer.city,
+          zipCode: customer.zipCode,
+          country: customer.country,
+          documentType: customer.documentType,
+          documentNumber: customer.documentNumber,
+        },
+        billingAddress: {
+          name: `${customer.firstName} ${customer.lastName}`,
+          email: customer.email,
+          phone: customer.phone,
+          address: customer.address,
+          city: customer.city,
+          zipCode: customer.zipCode,
+          country: customer.country,
+          documentType: customer.documentType,
+          documentNumber: customer.documentNumber,
+        },
       }
 
       const pref = await createPreferenceUseCase.execute(payload)
